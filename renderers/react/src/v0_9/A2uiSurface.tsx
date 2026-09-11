@@ -39,7 +39,7 @@
  * communicate through the data model.
  */
 
-import React, {useCallback, useMemo, useSyncExternalStore} from 'react';
+import React, {useCallback, useEffect, useMemo, useSyncExternalStore} from 'react';
 import {createPortal} from 'react-dom';
 import {
   NodeResolver,
@@ -49,6 +49,7 @@ import {
   type Signal,
   type SurfaceModel,
 } from '@a2ui/web_core/v0_9';
+import {setMarkdownRenderer} from '@a2ui/web_core/v0_9/basic_catalog';
 import {registerUniversalElement} from '@a2ui/web_core/v0_9/universal';
 import {customElementFor, type ReactHostElement} from './catalog/to_web_component';
 import {HostRegistry} from './host_registry';
@@ -61,6 +62,7 @@ import {
 } from './node-view';
 import {createNodeIndex, type NodeIndex} from './node_index';
 import type {ReactCatalogComponent} from './react_component_implementation';
+import {useMarkdownRenderer} from './markdown-context';
 
 const hostKeys = new WeakMap<ReactHostElement, string>();
 let nextHostKey = 0;
@@ -94,6 +96,13 @@ export const A2uiSurface: React.FC<{
       }
     }
   }, [surface]);
+
+  // web_core's basic catalog reads its markdown renderer from a module-level
+  // slot, so hand it whatever the React context carries.
+  const markdownRenderer = useMarkdownRenderer();
+  useEffect(() => {
+    setMarkdownRenderer(markdownRenderer);
+  }, [markdownRenderer]);
 
   // The resolver, and the node index built over it, are created inside
   // subscribe, which React calls only for committed renders: a render that is
