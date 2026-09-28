@@ -60,7 +60,7 @@ import {
   NodeSurfaceContext,
 } from './node-view';
 import {createNodeIndex, type NodeIndex} from './node_index';
-import type {ReactComponentImplementation} from './react_component_implementation';
+import type {ReactCatalogComponent} from './react_component_implementation';
 
 const hostKeys = new WeakMap<ReactHostElement, string>();
 let nextHostKey = 0;
@@ -76,7 +76,7 @@ function hostKey(host: ReactHostElement): string {
 }
 
 export const A2uiSurface: React.FC<{
-  surface: SurfaceModel<ReactComponentImplementation>;
+  surface: SurfaceModel<ReactCatalogComponent>;
 }> = ({surface}) => {
   // Define the custom element of every entry in every catalog the surface can
   // resolve components through (`availableCatalogs` includes the default one):
@@ -104,8 +104,8 @@ export const A2uiSurface: React.FC<{
   // the surface is swapped.
   const box = useMemo(
     () => ({
-      resolver: undefined as NodeResolver<ReactComponentImplementation> | undefined,
-      index: undefined as Signal<NodeIndex<ReactComponentImplementation>> | undefined,
+      resolver: undefined as NodeResolver<ReactCatalogComponent> | undefined,
+      index: undefined as Signal<NodeIndex<ReactCatalogComponent>> | undefined,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [surface],

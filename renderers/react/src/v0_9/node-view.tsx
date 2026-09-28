@@ -62,21 +62,23 @@ import {
 } from '@a2ui/web_core/v0_9';
 import {customElementFor, type ReactHostElement} from './catalog/to_web_component';
 import {nodeKey, type NodeIndex} from './node_index';
-import type {NodeBuildChild, ReactComponentImplementation} from './react_component_implementation';
+import type {
+  NodeBuildChild,
+  ReactCatalogComponent,
+  ReactComponentImplementation,
+} from './react_component_implementation';
 import {WebComponentNode} from './web_component_node';
 
 /** The surface a node view renders under, provided by `A2uiSurface`. */
-export const NodeSurfaceContext = createContext<SurfaceModel<ReactComponentImplementation> | null>(
-  null,
-);
+export const NodeSurfaceContext = createContext<SurfaceModel<ReactCatalogComponent> | null>(null);
 
 /**
  * The node index of the surface `A2uiSurface` renders (see `node_index.ts`),
  * so a host can find its node by component id and data path.
  */
-export const NodeIndexContext = createContext<Signal<
-  NodeIndex<ReactComponentImplementation>
-> | null>(null);
+export const NodeIndexContext = createContext<Signal<NodeIndex<ReactCatalogComponent>> | null>(
+  null,
+);
 
 /** Stands in for a component that has not arrived, or has just been removed. */
 export const LoadingPlaceholder: React.FC<{componentId: string}> = ({componentId}) => (
@@ -84,7 +86,7 @@ export const LoadingPlaceholder: React.FC<{componentId: string}> = ({componentId
 );
 
 /** Unresolved-reference reports already dispatched, per surface. */
-const reportedUnresolved = new WeakMap<SurfaceModel<ReactComponentImplementation>, Set<string>>();
+const reportedUnresolved = new WeakMap<SurfaceModel<ReactCatalogComponent>, Set<string>>();
 
 /**
  * The in-tree notice for a child reference the resolver built no node for.
@@ -95,7 +97,7 @@ const reportedUnresolved = new WeakMap<SurfaceModel<ReactComponentImplementation
  * that sets state would then warn.
  */
 export const UnresolvedChildReference: React.FC<{
-  surface: SurfaceModel<ReactComponentImplementation> | null;
+  surface: SurfaceModel<ReactCatalogComponent> | null;
   id: string;
   requestedPath: string;
   detail: string;
@@ -133,7 +135,7 @@ export function useSignalValue<T>(signal: Signal<T>): T {
 }
 
 /** Child nodes of one view, keyed by id, then by the child's data path. */
-type ChildMap = Map<string, Map<string, ComponentNode<ReactComponentImplementation>>>;
+type ChildMap = Map<string, Map<string, ComponentNode<ReactCatalogComponent>>>;
 
 /**
  * The two id namespaces `buildChild` callers use. Views hand back the tokens
@@ -155,7 +157,7 @@ function newChildIndex(): ChildIndex {
 function setChild(
   map: ChildMap,
   id: string,
-  child: ComponentNode<ReactComponentImplementation>,
+  child: ComponentNode<ReactCatalogComponent>,
   firstWins: boolean,
 ): void {
   let byPath = map.get(id);
@@ -176,10 +178,7 @@ function setChild(
  * keeps the first occurrence, matching how a raw reference has no way to
  * name a later one.
  */
-function registerChild(
-  index: ChildIndex,
-  child: ComponentNode<ReactComponentImplementation>,
-): string {
+function registerChild(index: ChildIndex, child: ComponentNode<ReactCatalogComponent>): string {
   setChild(index.byToken, child.instanceId, child, false);
   setChild(index.byId, child.componentId, child, true);
   return child.instanceId;
@@ -195,8 +194,8 @@ function registerChild(
 function toViewValue(parent: ComponentNode, value: unknown, index: ChildIndex): unknown {
   if (isComponentNode(value)) {
     // Every node in this surface's props came from its own resolver, whose
-    // catalog carries ReactComponentImplementation entries.
-    const token = registerChild(index, value as ComponentNode<ReactComponentImplementation>);
+    // catalog carries ReactCatalogComponent entries.
+    const token = registerChild(index, value as ComponentNode<ReactCatalogComponent>);
     if (value.dataPath !== parent.dataPath) {
       return {id: token, basePath: value.dataPath};
     }
@@ -333,7 +332,7 @@ export function useNodeView(
 
 /** Renders an implementation that has no `view`: its wrapper binds itself. */
 const RenderFallback: React.FC<{
-  node: ComponentNode<ReactComponentImplementation>;
+  node: ComponentNode<ReactCatalogComponent>;
   impl: ReactComponentImplementation;
   buildChild: NodeBuildChild;
 }> = ({node, impl, buildChild}) => {
@@ -351,7 +350,8 @@ const RenderFallback: React.FC<{
  * Renders a resolved node as its custom element, the way web_core's
  * `renderA2uiNode` does: `<tagName>` with the node's `context` and nothing
  * else. For a React implementation the element is its host, which
- * `A2uiSurface` then portals the implementation into. A node that has not
+ * `A2uiSurface` then portals the implementation into; a universal Web
+ * Component renders itself. A node that has not
  * arrived renders a `LoadingPlaceholder`, and a node of an unknown type
  * renders an inline error, both in place of the element.
  */
@@ -360,8 +360,8 @@ export const ChildElement = memo(
     surface,
     node,
   }: {
-    surface: SurfaceModel<ReactComponentImplementation>;
-    node: ComponentNode<ReactComponentImplementation>;
+    surface: SurfaceModel<ReactCatalogComponent>;
+    node: ComponentNode<ReactCatalogComponent>;
   }) => {
     // Memoized so a re-render does not hand the element a new context. A
     // replaced component is a new node, so it gets a fresh context. The model
@@ -411,7 +411,7 @@ export const HostContent = memo(({host}: {host: ReactHostElement}) => {
 });
 HostContent.displayName = 'HostContent';
 
-const NO_NODE = signal<ComponentNode<ReactComponentImplementation> | undefined>(undefined);
+const NO_NODE = signal<ComponentNode<ReactCatalogComponent> | undefined>(undefined);
 
 /**
  * The resolved node `context` stands for: the surface's node index entry for
@@ -425,7 +425,7 @@ const NO_NODE = signal<ComponentNode<ReactComponentImplementation> | undefined>(
  */
 function useNodeFor(
   context: ComponentContext | undefined,
-): ComponentNode<ReactComponentImplementation> | undefined {
+): ComponentNode<ReactCatalogComponent> | undefined {
   const index = useContext(NodeIndexContext);
   const found = useMemo(() => {
     if (!index || !context) {
@@ -442,7 +442,7 @@ function useNodeFor(
  * elements.
  */
 const NodeContent: React.FC<{
-  node: ComponentNode<ReactComponentImplementation>;
+  node: ComponentNode<ReactCatalogComponent>;
 }> = ({node}) => {
   const surface = useContext(NodeSurfaceContext);
   const buildChild = useCallback<NodeBuildChild>(
@@ -475,8 +475,10 @@ const NodeContent: React.FC<{
     [surface, node],
   );
 
+  // Only React implementations have hosts; a universal Web Component renders
+  // itself.
   const impl = node.impl;
-  if (!impl) {
+  if (!impl || !('render' in impl)) {
     return null;
   }
   const View = impl.view;
