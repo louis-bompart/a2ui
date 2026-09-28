@@ -18,15 +18,21 @@
  * The node rendering layer: everything that turns a resolved `ComponentNode`
  * into React output.
  *
- * `NodeView` walks the resolved tree, hands each implementation its node and a
- * `buildChild` that renders resolved children, and reports the child
- * references the resolver could not classify. Each implementation carries a
- * generated `view` (see `adapter.tsx`) that subscribes to its own node's props
- * through `useNodeView` and converts them back to the shapes existing views
- * expect, so a data change re-renders exactly the affected component.
+ * Every resolved node renders the way web_core's `renderA2uiNode` renders a
+ * child: as its implementation's custom element, handed only a `context`
+ * (`ChildElement`). For a node implemented in React that element is a host (see
+ * `catalog/to_web_component.tsx`), and `A2uiSurface` portals `HostContent` into
+ * it. `HostContent` finds the host's node in the resolver's tree by component
+ * id and data path, and renders the implementation's `view` with that node and
+ * a `buildChild` that renders resolved children as their elements, which become
+ * hosts in turn. It also reports the child references the resolver could not
+ * classify. Each implementation carries a generated `view` (see `adapter.tsx`)
+ * that subscribes to its own node's props through `useNodeView` and converts
+ * them back to the shapes existing views expect, so a data change re-renders
+ * exactly the affected component.
  *
  * Surface lifecycle concerns (resolver construction and disposal, root
- * subscription) belong in `A2uiSurface.tsx`, not here.
+ * subscription, the host portals) belong in `A2uiSurface.tsx`, not here.
  */
 
 import type React from 'react';
@@ -45,31 +51,32 @@ import {
   isComponentNode,
   ResolvedBinding,
   isWritable,
+  computed,
   effect,
   getValue,
   peekValue,
+  signal,
   type NodeProps,
   type Signal,
   type SurfaceModel,
 } from '@a2ui/web_core/v0_9';
-import type {ReactComponentImplementation} from './adapter';
-
-/** Renders a resolved child node, or falls back for an unresolved id. */
-export type NodeBuildChild = (
-  child: ComponentNode<ReactComponentImplementation> | string,
-  basePath?: string,
-) => React.ReactNode;
-
-/** What a component implementation's `view` receives from the node surface. */
-export type NodeViewProps = {
-  node: ComponentNode<ReactComponentImplementation>;
-  buildChild: NodeBuildChild;
-};
+import {customElementFor, type ReactHostElement} from './catalog/to_web_component';
+import {nodeKey, type NodeIndex} from './node_index';
+import type {NodeBuildChild, ReactComponentImplementation} from './react_component_implementation';
+import {WebComponentNode} from './web_component_node';
 
 /** The surface a node view renders under, provided by `A2uiSurface`. */
 export const NodeSurfaceContext = createContext<SurfaceModel<ReactComponentImplementation> | null>(
   null,
 );
+
+/**
+ * The node index of the surface `A2uiSurface` renders (see `node_index.ts`),
+ * so a host can find its node by component id and data path.
+ */
+export const NodeIndexContext = createContext<Signal<
+  NodeIndex<ReactComponentImplementation>
+> | null>(null);
 
 /** Stands in for a component that has not arrived, or has just been removed. */
 export const LoadingPlaceholder: React.FC<{componentId: string}> = ({componentId}) => (
@@ -340,7 +347,15 @@ const RenderFallback: React.FC<{
   return <Render context={context} buildChild={rawBuildChild} />;
 };
 
-export const NodeView = memo(
+/**
+ * Renders a resolved node as its custom element, the way web_core's
+ * `renderA2uiNode` does: `<tagName>` with the node's `context` and nothing
+ * else. For a React implementation the element is its host, which
+ * `A2uiSurface` then portals the implementation into. A node that has not
+ * arrived renders a `LoadingPlaceholder`, and a node of an unknown type
+ * renders an inline error, both in place of the element.
+ */
+export const ChildElement = memo(
   ({
     surface,
     node,
@@ -348,49 +363,125 @@ export const NodeView = memo(
     surface: SurfaceModel<ReactComponentImplementation>;
     node: ComponentNode<ReactComponentImplementation>;
   }) => {
-    const buildChild = useCallback<NodeBuildChild>(
-      (child, basePath) => {
-        if (isComponentNode(child)) {
-          return <NodeView key={child.instanceId} surface={surface} node={child} />;
-        }
-        // The resolver turns every child reference it can identify into a
-        // node, so a leftover id was never classified. Distinguish the two
-        // causes a catalog author can actually have.
-        const requested = basePath ?? node.dataPath;
-        const detail = surface.componentsModel.get(child)
-          ? 'the component exists, but the catalog schema does not mark the referencing ' +
-            'property as a component id. Use componentId() or childList() from ' +
-            '@a2ui/web_core.'
-          : 'no component with this id exists on the surface.';
-        return (
-          <UnresolvedChildReference
-            key={JSON.stringify([child, requested])}
-            surface={surface}
-            id={child}
-            requestedPath={requested}
-            detail={detail}
-          />
-        );
-      },
+    // Memoized so a re-render does not hand the element a new context. A
+    // replaced component is a new node, so it gets a fresh context. The model
+    // can be removed between the resolver's update and this render
+    // committing; ComponentContext's constructor throws on a missing model,
+    // so that window renders a placeholder.
+    const context = useMemo(
+      () =>
+        surface.componentsModel.get(node.componentId)
+          ? new ComponentContext(surface, node.componentId, node.dataPath)
+          : undefined,
       [surface, node],
     );
 
     if (node.state === 'unknown-type') {
       return <div style={{color: 'red'}}>Unknown component type: {node.type}</div>;
     }
-    if (node.isPlaceholder) {
+    const element = customElementFor(node.impl);
+    if (node.isPlaceholder || !element || !context) {
       return <LoadingPlaceholder componentId={node.componentId} />;
     }
-    const impl = node.impl;
-    if (!impl) {
-      // Type narrowing; unreachable for a resolved node.
-      return null;
-    }
-    const View = impl.view;
-    if (!View) {
-      return <RenderFallback node={node} impl={impl} buildChild={buildChild} />;
-    }
-    return <View node={node} buildChild={buildChild} />;
+    return <WebComponentNode tagName={element.tagName} context={context} />;
   },
 );
-NodeView.displayName = 'NodeView';
+ChildElement.displayName = 'ChildElement';
+
+/**
+ * The content `A2uiSurface` portals into one host: the implementation of the
+ * host's node (`node.impl`), through its `view`, or its `render` when it has
+ * no `view`.
+ *
+ * A host is handed only a `context`, whoever its parent is, so its node is
+ * looked up in the surface's node index by component id and data path
+ * (`useNodeFor`).
+ *
+ * Memoized so a registry update, which re-renders `A2uiSurface`, leaves
+ * existing portals alone. It re-renders when the host is handed a new
+ * context or its node changes.
+ */
+export const HostContent = memo(({host}: {host: ReactHostElement}) => {
+  const context = useSyncExternalStore(host.subscribe, host.getContext);
+  const node = useNodeFor(context);
+  if (!node) {
+    return null;
+  }
+  return <NodeContent node={node} />;
+});
+HostContent.displayName = 'HostContent';
+
+const NO_NODE = signal<ComponentNode<ReactComponentImplementation> | undefined>(undefined);
+
+/**
+ * The resolved node `context` stands for: the surface's node index entry for
+ * its component id and data path.
+ *
+ * The lookup runs inside a `computed` over the index, so the host re-renders
+ * only when its own entry changes: when its node arrives, is replaced, or is
+ * upgraded from a placeholder. A component referenced twice at the same data
+ * path resolves to the first match for both hosts; that renders identically,
+ * because the same component in the same data scope has the same props.
+ */
+function useNodeFor(
+  context: ComponentContext | undefined,
+): ComponentNode<ReactComponentImplementation> | undefined {
+  const index = useContext(NodeIndexContext);
+  const found = useMemo(() => {
+    if (!index || !context) {
+      return NO_NODE;
+    }
+    const key = nodeKey(context.componentModel.id, context.dataContext.path);
+    return computed(() => getValue(index).get(key));
+  }, [index, context]);
+  return useSignalValue(found);
+}
+
+/**
+ * Renders one node's implementation (`node.impl`), with children as their
+ * elements.
+ */
+const NodeContent: React.FC<{
+  node: ComponentNode<ReactComponentImplementation>;
+}> = ({node}) => {
+  const surface = useContext(NodeSurfaceContext);
+  const buildChild = useCallback<NodeBuildChild>(
+    (child, basePath) => {
+      if (!surface) {
+        return null;
+      }
+      if (isComponentNode(child)) {
+        return <ChildElement key={child.instanceId} surface={surface} node={child} />;
+      }
+      // The resolver turns every child reference it can identify into a
+      // node, so a leftover id was never classified. Distinguish the two
+      // causes a catalog author can actually have.
+      const requested = basePath ?? node.dataPath;
+      const detail = surface.componentsModel.get(child)
+        ? 'the component exists, but the catalog schema does not mark the referencing ' +
+          'property as a component id. Use componentId() or childList() from ' +
+          '@a2ui/web_core.'
+        : 'no component with this id exists on the surface.';
+      return (
+        <UnresolvedChildReference
+          key={JSON.stringify([child, requested])}
+          surface={surface}
+          id={child}
+          requestedPath={requested}
+          detail={detail}
+        />
+      );
+    },
+    [surface, node],
+  );
+
+  const impl = node.impl;
+  if (!impl) {
+    return null;
+  }
+  const View = impl.view;
+  if (!View) {
+    return <RenderFallback node={node} impl={impl} buildChild={buildChild} />;
+  }
+  return <View node={node} buildChild={buildChild} />;
+};

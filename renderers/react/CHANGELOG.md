@@ -1,5 +1,9 @@
 ## Unreleased
 
+- **BREAKING CHANGE**: (v0_9) Every catalog component renders inside a custom element host (`<a2ui-react-<name>>` for React implementations, with `display: contents`), and React implementations render into their hosts through portals from the surface's single React root. `A2uiSurface` still resolves the tree with `NodeResolver`, and each implementation's `view` still receives its `ComponentNode`; `buildChild(childNode)` now returns the child's host element. Every child renders the way web_core's `renderA2uiNode` renders one, as its element with only a `context`, and a host finds its node in the surface's resolved tree by component id and data path. [#2849](https://github.com/a2ui-project/a2ui/pull/2849)
+- (v0_9) Entries made by `createComponentImplementation` and `createBinderlessComponentImplementation` also carry the `tagName` and `element` of their host element, so universal container components can render them by tag. `A2uiSurface` defines the host elements of every available catalog when it renders. [#2849](https://github.com/a2ui-project/a2ui/pull/2849)
+- (v0_9) React context provided above `A2uiSurface` (and error boundaries and Suspense above it) reaches every catalog component. React context provided by a parent catalog component does not reach its child components; components communicate through the data model. [#2849](https://github.com/a2ui-project/a2ui/pull/2849)
+
 ## 0.11.1
 
 - (v0_9) Fix `ChoicePicker` radio groups colliding across surfaces: the radio group `name` is now unique per rendered instance instead of derived from the surface-scoped component id ([#2447](https://github.com/a2ui-project/a2ui/issues/2447)).
