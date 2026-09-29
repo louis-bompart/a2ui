@@ -80,7 +80,12 @@ interface LogEntry {
 }
 
 export const App = ({initialExampleId, onAction}: AppProps) => {
-  const [selectedVersion, setSelectedVersion] = useState<'v0.9' | 'v1.0'>('v0.9');
+  const [selectedVersion, setSelectedVersion] = useState<'v0.9' | 'v1.0'>(() => {
+    if (initialExampleId && demoItemsV10.some(e => e.id === initialExampleId)) {
+      return 'v1.0';
+    }
+    return 'v0.9';
+  });
 
   const demoItems: DemoItem[] = selectedVersion === 'v1.0' ? demoItemsV10 : demoItemsV09;
   const [selectedExampleId, setSelectedExampleId] = useState(initialExampleId ?? demoItems[0]?.id);

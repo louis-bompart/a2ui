@@ -352,6 +352,9 @@ export const WebComponentNodeView: React.FC<{
     }
 
     const prevRenderer = getMarkdownRenderer();
+    const hasSetRenderer = !contextMarkdownRenderer || !prevRenderer;
+    const activeRenderer = contextMarkdownRenderer || renderMarkdown;
+
     if (contextMarkdownRenderer) {
       setMarkdownRenderer(contextMarkdownRenderer);
     } else if (!prevRenderer) {
@@ -384,7 +387,9 @@ export const WebComponentNodeView: React.FC<{
       dataSub.unsubscribe();
       createdSub.unsubscribe();
       el.remove();
-      setMarkdownRenderer(prevRenderer);
+      if (hasSetRenderer && getMarkdownRenderer() === activeRenderer) {
+        setMarkdownRenderer(prevRenderer);
+      }
     };
   }, [surface, componentId, dataPath, impl, contextMarkdownRenderer]);
 
@@ -419,18 +424,27 @@ function useComponentSubscription(
   const revRef = useRef(0);
   const subscribe = useCallback(
     (onChange: () => void) => {
-      const bump = () => {
+      let currentModel = surface.componentsModel.get(id);
+      let subUpdated = currentModel?.onUpdated.subscribe(bump);
+
+      function bump() {
         revRef.current += 1;
+        const nextModel = surface.componentsModel.get(id);
+        if (nextModel !== currentModel) {
+          subUpdated?.unsubscribe();
+          currentModel = nextModel;
+          subUpdated = nextModel?.onUpdated.subscribe(bump);
+        }
         onChange();
-      };
+      }
+
       const subCreated = surface.componentsModel.onCreated.subscribe(comp => {
         if (comp.id === id) bump();
       });
       const subDeleted = surface.componentsModel.onDeleted.subscribe(deletedId => {
         if (deletedId === id) bump();
       });
-      const current = surface.componentsModel.get(id);
-      const subUpdated = current?.onUpdated.subscribe(bump);
+
       return () => {
         subCreated.unsubscribe();
         subDeleted.unsubscribe();
