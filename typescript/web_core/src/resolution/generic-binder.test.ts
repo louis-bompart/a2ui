@@ -21,6 +21,7 @@ import {
   GenericBinder,
   getSafeChildList,
   MAX_DYNAMIC_CHILD_LIST_SIZE,
+  ResolveA2uiProps,
   scrapeSchemaBehavior,
 } from './generic-binder.js';
 import {ComponentContext} from './component-context.js';
@@ -574,6 +575,54 @@ describe('GenericBinder Checkable Trait', () => {
 
     binder.snapshot.setValue?.('updated');
     assert.strictEqual(surface.dataModel.get('/fieldVal'), 'updated');
+  });
+
+  it('should generate nested field setters for path-bound structured arrays', () => {
+    const {surface} = setupSurfaceAndMocks();
+    surface.dataModel.set('/form/items', [
+      {name: 'Ada', details: {note: 'First'}},
+      {name: 'Lin', details: {note: 'Second'}},
+    ]);
+
+    const itemSchema = z.object({
+      name: z.string(),
+      details: z.object({note: z.string()}),
+      action: CommonSchemas.Action.optional(),
+    });
+    const schema = z.object({
+      items: z.union([z.array(itemSchema), CommonSchemas.DataBinding, CommonSchemas.FunctionCall]),
+    });
+    type Props = ResolveA2uiProps<z.infer<typeof schema>>;
+
+    const compModel = new ComponentModel(
+      'c_structured',
+      'ListEditor',
+      {items: {path: 'items'}},
+      surface.defaultCatalog,
+    );
+    surface.componentsModel.addComponent(compModel);
+
+    const context = new ComponentContext(surface, 'c_structured', '/form');
+    const binder = new GenericBinder<z.infer<typeof schema>>(context, schema);
+    binder.subscribe(() => {});
+
+    let props = binder.snapshot as Props;
+    assert.strictEqual(typeof props.items[0].setName, 'function');
+    assert.strictEqual(typeof props.items[0].details.setNote, 'function');
+    assert.strictEqual((props.items[0] as {setAction?: unknown}).setAction, undefined);
+    assert.deepStrictEqual(Object.keys(props.items[0]), ['name', 'details']);
+    assert.strictEqual(JSON.stringify(props.items[0]), '{"name":"Ada","details":{"note":"First"}}');
+
+    props.items[0].setName('Leo');
+    assert.strictEqual(surface.dataModel.get('/form/items/0/name'), 'Leo');
+    props = binder.snapshot as Props;
+    assert.strictEqual(props.items[0].name, 'Leo');
+
+    props.items[1].details.setNote('Updated');
+    assert.strictEqual(surface.dataModel.get('/form/items/1/details/note'), 'Updated');
+    props = binder.snapshot as Props;
+    assert.strictEqual(props.items[1].details.note, 'Updated');
+    assert.strictEqual(typeof props.items[1].details.setNote, 'function');
   });
 
   it('should handle subscription, component update rebuilding, and dispose', async () => {

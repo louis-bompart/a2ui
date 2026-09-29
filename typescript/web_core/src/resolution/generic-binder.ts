@@ -18,7 +18,7 @@ import {z} from 'zod';
 import {ComponentContext} from './component-context.js';
 import {Action, ChildList, DataBinding, childRefKindOf} from '../types/common-types.js';
 import {extractRefDefName} from '../catalog/reference-map.js';
-import {MAX_DYNAMIC_VALUE_DEPTH} from './data-context.js';
+import {DataContext, MAX_DYNAMIC_VALUE_DEPTH} from './data-context.js';
 
 // --- Schema Scraping ---
 
@@ -43,7 +43,7 @@ import {MAX_DYNAMIC_VALUE_DEPTH} from './data-context.js';
  * - OBJECT / ARRAY: Recursive traversal nodes for complex nested schemas.
  */
 export type BehaviorNode =
-  | {type: 'DYNAMIC'}
+  | {type: 'DYNAMIC'; value?: BehaviorNode}
   | {type: 'ACTION'}
   | {type: 'STRUCTURAL'}
   | {type: 'CHECKABLE'}
@@ -194,9 +194,34 @@ function isDynamicDef(defName: string, typeName?: string): boolean {
   );
 }
 
-function matchUnionBehavior(options: z.ZodTypeAny[]): BehaviorNode | undefined {
+function isFunctionCallOption(option: z.ZodTypeAny): boolean {
+  if (getRefDefName(option) === 'FunctionCall') return true;
+  const current = unwrapZodSchema(option);
+  const def = (current as any)._def;
+  return def?.typeName === 'ZodObject' && Boolean(def.shape?.().call);
+}
+
+function getDynamicValueBehavior(type: z.ZodTypeAny): BehaviorNode | undefined {
+  const current: any = unwrapZodSchema(type);
+  if (current?._def?.typeName !== 'ZodUnion') return undefined;
+
+  const structuredOptions = (current._def.options as z.ZodTypeAny[]).filter(option => {
+    if (isDynamicOption(option) || isFunctionCallOption(option)) return false;
+    const optionType = (unwrapZodSchema(option) as any)._def?.typeName;
+    return optionType === 'ZodArray' || optionType === 'ZodObject';
+  });
+
+  return structuredOptions.length === 1 ? getFieldBehavior(structuredOptions[0]) : undefined;
+}
+
+function dynamicBehavior(type: z.ZodTypeAny): Extract<BehaviorNode, {type: 'DYNAMIC'}> {
+  const value = getDynamicValueBehavior(type);
+  return value ? {type: 'DYNAMIC', value} : {type: 'DYNAMIC'};
+}
+
+function matchUnionBehavior(type: z.ZodTypeAny, options: z.ZodTypeAny[]): BehaviorNode | undefined {
   if (options.some(isActionOption)) return {type: 'ACTION'};
-  if (options.some(isDynamicOption)) return {type: 'DYNAMIC'};
+  if (options.some(isDynamicOption)) return dynamicBehavior(type);
   if (options.some(isChildListOption)) return {type: 'STRUCTURAL'};
   return undefined;
 }
@@ -233,12 +258,12 @@ function getFieldBehavior(type: z.ZodTypeAny): BehaviorNode {
   }
 
   if (isDynamicDef(defName, current._def?.typeName)) {
-    return {type: 'DYNAMIC'};
+    return dynamicBehavior(current);
   }
 
   // Structural matching for A2UI primitives using typeName to avoid dual-module instanceof issues
   if (current._def.typeName === 'ZodUnion') {
-    const unionBehavior = matchUnionBehavior(current._def.options as z.ZodTypeAny[]);
+    const unionBehavior = matchUnionBehavior(current, current._def.options as z.ZodTypeAny[]);
     if (unionBehavior) return unionBehavior;
   }
 
@@ -276,6 +301,13 @@ type ActionLike =
 
 /** Evaluates to true if type T can contain a dynamic binding. */
 type IsDynamic<T> = DataBinding extends NonNullable<T> ? true : false;
+type LiteralValue<T> = Exclude<NonNullable<T>, DynamicTypes>;
+type InheritWritable<Parent extends boolean, T> = Parent extends true ? true : IsDynamic<T>;
+type IsWritableDataField<K, T> = K extends 'checks'
+  ? false
+  : [NonNullable<T>] extends [ActionLike | ChildList]
+    ? false
+    : true;
 
 /**
  * Resolved reference to a child component with its unique identifier and data context path.
@@ -287,18 +319,12 @@ export interface ResolvedChildRef {
   basePath: string;
 }
 
-/**
- * Maps raw Zod inferred types to their resolved runtime equivalents.
- *
- * For example, an `Action` object becomes a callable `() => void` function.
- */
-export type ResolveA2uiProp<T> = [NonNullable<T>] extends [ActionLike]
-  ? (() => void) | Extract<T, undefined>
-  : [NonNullable<T>] extends [ChildList]
-    ? (string | ResolvedChildRef)[] | Extract<T, undefined>
-    : Exclude<T, DynamicTypes> extends never
-      ? unknown
-      : Exclude<T, DynamicTypes>;
+/** Generates setters for fields whose containing object inherits a writable binding context. */
+type GenerateBoundSetters<T> = {
+  [K in keyof T as IsWritableDataField<K, T[K]> extends true
+    ? `set${Capitalize<string & K>}`
+    : never]-?: (value: LiteralValue<T[K]>) => void;
+};
 
 /**
  * Generates two-way binding setters for dynamic properties.
@@ -307,9 +333,33 @@ export type ResolveA2uiProp<T> = [NonNullable<T>] extends [ActionLike]
  */
 export type GenerateSetters<T> = {
   [K in keyof T as IsDynamic<T[K]> extends true ? `set${Capitalize<string & K>}` : never]-?: (
-    value: Exclude<NonNullable<T[K]>, DynamicTypes>,
+    value: LiteralValue<T[K]>,
   ) => void;
 };
+
+type ResolveObject<T extends object, InheritedWritable extends boolean> = {
+  [K in keyof T]: ResolveA2uiProp<T[K], InheritWritable<InheritedWritable, T[K]>>;
+} & GenerateSetters<T> &
+  (InheritedWritable extends true ? GenerateBoundSetters<T> : unknown);
+
+/**
+ * Maps raw Zod inferred types to their resolved runtime equivalents.
+ *
+ * For example, an `Action` object becomes a callable `() => void` function.
+ */
+export type ResolveA2uiProp<T, InheritedWritable extends boolean = IsDynamic<T>> = [
+  NonNullable<T>,
+] extends [ActionLike]
+  ? (() => void) | Extract<T, undefined>
+  : [NonNullable<T>] extends [ChildList]
+    ? (string | ResolvedChildRef)[] | Extract<T, undefined>
+    : [LiteralValue<T>] extends [readonly (infer Item)[]]
+      ? ResolveA2uiProp<Item, InheritedWritable>[] | Extract<T, undefined>
+      : [LiteralValue<T>] extends [object]
+        ? ResolveObject<LiteralValue<T> & object, InheritedWritable> | Extract<T, undefined>
+        : LiteralValue<T> extends never
+          ? unknown
+          : LiteralValue<T> | Extract<T, undefined>;
 
 /**
  * Fully resolved component properties, setters, and validation flags.
@@ -317,15 +367,10 @@ export type GenerateSetters<T> = {
  * Used by framework adapters (such as createReactComponent) to provide
  * strongly-typed props to component views.
  */
-export type ResolveA2uiProps<T> = (T extends object
-  ? {
-      [K in keyof T]: ResolveA2uiProp<T[K]>;
-    }
-  : T) &
-  GenerateSetters<T> & {
-    isValid?: boolean;
-    validationErrors?: string[];
-  };
+export type ResolveA2uiProps<T> = (T extends object ? ResolveObject<T, false> : T) & {
+  isValid?: boolean;
+  validationErrors?: string[];
+};
 
 /**
  * The maximum number of children materialized by dynamic ChildList templates.
@@ -418,9 +463,20 @@ export class GenericBinder<T> {
     this.notify();
   }
 
-  private bindDynamicValue(value: unknown, path: string[], isSync: boolean): unknown {
+  private bindDynamicValue(
+    value: unknown,
+    behavior: Extract<BehaviorNode, {type: 'DYNAMIC'}>,
+    path: string[],
+    isSync: boolean,
+  ): unknown {
+    const writableContext = isDataBinding(value)
+      ? this.context.dataContext.nested(value.path)
+      : undefined;
+    const resolveValue = (newValue: unknown) =>
+      behavior.value ? this.resolveBoundValue(newValue, behavior.value, writableContext) : newValue;
+
     const bound = this.context.dataContext.subscribeDynamicValue(value, newVal => {
-      this.updateDeepValue(path, newVal);
+      this.updateDeepValue(path, resolveValue(newVal));
       this.notify();
     });
 
@@ -429,7 +485,56 @@ export class GenericBinder<T> {
     } else {
       bound.unsubscribe();
     }
-    return bound.value;
+    return resolveValue(bound.value);
+  }
+
+  private resolveBoundValue(
+    value: unknown,
+    behavior: BehaviorNode,
+    writableContext?: DataContext,
+  ): unknown {
+    if (value === undefined || value === null) return value;
+
+    if (behavior.type === 'DYNAMIC') {
+      return behavior.value
+        ? this.resolveBoundValue(value, behavior.value, writableContext)
+        : value;
+    }
+
+    if (behavior.type === 'ARRAY') {
+      if (!Array.isArray(value)) return value;
+      return value.map((item, index) =>
+        this.resolveBoundValue(item, behavior.element, writableContext?.nested(String(index))),
+      );
+    }
+
+    if (behavior.type !== 'OBJECT' || typeof value !== 'object' || Array.isArray(value)) {
+      return value;
+    }
+
+    const result: Record<string, unknown> = {};
+    for (const [key, child] of Object.entries(value)) {
+      const childBehavior = behavior.shape[key] ?? {type: 'STATIC'};
+      result[key] = this.resolveBoundValue(
+        child,
+        childBehavior,
+        writableContext?.nested(escapeJsonPointerSegment(key)),
+      );
+    }
+
+    for (const [key, childBehavior] of Object.entries(behavior.shape)) {
+      if (!isWritableBoundField(childBehavior)) continue;
+      const setterName = `set${key.charAt(0).toUpperCase()}${key.slice(1)}`;
+      Object.defineProperty(result, setterName, {
+        configurable: true,
+        enumerable: false,
+        value: (newValue: unknown) => {
+          writableContext?.set(escapeJsonPointerSegment(key), newValue);
+        },
+      });
+    }
+
+    return result;
   }
 
   /**
@@ -673,7 +778,7 @@ export class GenericBinder<T> {
 
     switch (behavior.type) {
       case 'DYNAMIC':
-        return this.bindDynamicValue(value, path, isSync);
+        return this.bindDynamicValue(value, behavior, path, isSync);
 
       case 'ACTION':
         return this.bindAction(value, path);
@@ -767,6 +872,25 @@ export class GenericBinder<T> {
   get snapshot() {
     return this.currentProps as T;
   }
+}
+
+function isDataBinding(value: unknown): value is DataBinding {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    !Array.isArray(value) &&
+    typeof (value as {path?: unknown}).path === 'string'
+  );
+}
+
+function escapeJsonPointerSegment(segment: string): string {
+  return segment.replace(/~/g, '~0').replace(/\//g, '~1');
+}
+
+function isWritableBoundField(behavior: BehaviorNode): boolean {
+  return (
+    behavior.type !== 'ACTION' && behavior.type !== 'STRUCTURAL' && behavior.type !== 'CHECKABLE'
+  );
 }
 
 /**
