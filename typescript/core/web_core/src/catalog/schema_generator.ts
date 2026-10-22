@@ -19,6 +19,7 @@ import {zodToJsonSchema} from 'zod-to-json-schema';
 
 import {isAtLeastVersion, toCanonicalVersion} from '../common/semver.js';
 import {CommonSchemas} from '../types/common-types.js';
+import {isA2uiSchema, zodSchemaOf} from './a2ui_schema.js';
 import {exclusiveUnionOverride} from './exclusive_union.js';
 import {
   catalogDocumentModel,
@@ -534,7 +535,7 @@ function processTheme(
     return;
   }
 
-  const themeRaw = zodToJsonSchema(catalog.themeSchema, {
+  const themeRaw = zodToJsonSchema(zodSchemaOf(catalog.themeSchema), {
     target: 'jsonSchema2019-09',
     $refStrategy: 'none',
     override: exclusiveUnionOverride,
@@ -594,10 +595,10 @@ function extractZodComponentSchema(
   reqList: string[];
   additionalProps: boolean | JsonObject | undefined;
 } {
-  if (!comp.schema || typeof comp.schema !== 'object' || !('safeParse' in comp.schema)) {
+  if (!isA2uiSchema(comp.schema)) {
     return {props: {}, reqList: [], additionalProps: undefined};
   }
-  const rawZod = zodToJsonSchema(comp.schema, {
+  const rawZod = zodToJsonSchema(zodSchemaOf(comp.schema), {
     target: 'jsonSchema2019-09',
     $refStrategy: 'none',
     override: exclusiveUnionOverride,
@@ -773,8 +774,8 @@ function buildFunctionArgsSchema(
       {inlineLocalDefs: false},
     ) as JsonObject;
     restoreSourceRefs(paramSchemaObj, context.standardDefs, false);
-  } else if (fn.schema && typeof fn.schema === 'object' && 'safeParse' in fn.schema) {
-    const rawZod = zodToJsonSchema(fn.schema, {
+  } else if (isA2uiSchema(fn.schema)) {
+    const rawZod = zodToJsonSchema(zodSchemaOf(fn.schema), {
       target: 'jsonSchema2019-09',
       $refStrategy: 'none',
       override: exclusiveUnionOverride,

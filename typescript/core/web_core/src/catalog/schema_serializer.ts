@@ -15,10 +15,10 @@
  * limitations under the License.
  */
 
-import type {z} from 'zod';
 import {zodToJsonSchema} from 'zod-to-json-schema';
 
 import {isAtLeastVersion, toCanonicalVersion} from '../common/semver.js';
+import {isA2uiSchema, zodSchemaOf, type A2uiSchema} from './a2ui_schema.js';
 import {exclusiveUnionOverride} from './exclusive_union.js';
 import {loadedDefinition} from './json_entries.js';
 import {getSpecAnnotation, type JsonSchemaObject} from './spec_annotations.js';
@@ -47,7 +47,7 @@ export interface SerializableCatalog {
   readonly protocolVersion: string;
   readonly components: ReadonlyMap<string, ComponentApi>;
   readonly functions: ReadonlyMap<string, FunctionApi>;
-  readonly themeSchema?: z.ZodTypeAny;
+  readonly themeSchema?: A2uiSchema;
   readonly instructions?: string;
   readonly schemaUri?: string;
   readonly schemaId?: string;
@@ -62,7 +62,7 @@ export interface SerializableCatalog {
   readonly extensionFields?: Readonly<Record<string, unknown>>;
   readonly commonTypesUri?: string;
   readonly themeLocation?: 'defs' | 'styles';
-  readonly defModels?: readonly z.ZodTypeAny[];
+  readonly defModels?: readonly A2uiSchema[];
 }
 
 type JsonObject = Record<string, unknown>;
@@ -270,17 +270,17 @@ function rewriteRefMarkers(
 }
 
 /**
- * Converts a Zod schema into an unbundled JSON Schema object.
+ * Converts a schema into an unbundled JSON Schema object.
  */
 function zodToUnbundledJson(
-  schema: z.ZodTypeAny | undefined,
+  schema: A2uiSchema | undefined,
   localDefs: ReadonlySet<string>,
   commonTypesUri: string = DEFAULT_COMMON_TYPES_URI,
 ): JsonObject {
-  if (!schema || typeof schema !== 'object' || !('safeParse' in schema)) {
+  if (!isA2uiSchema(schema)) {
     return {type: 'object', properties: {}};
   }
-  const json = zodToJsonSchema(schema, {
+  const json = zodToJsonSchema(zodSchemaOf(schema), {
     target: 'jsonSchema2019-09',
     $refStrategy: 'none',
     override: exclusiveUnionOverride,
@@ -392,7 +392,7 @@ function serializeFunctionModel(
  * Serializes a theme Zod schema into a `$defs.theme` object schema.
  */
 function serializeThemeModel(
-  theme: z.ZodTypeAny,
+  theme: A2uiSchema,
   localDefs: ReadonlySet<string>,
   commonTypesUri: string = DEFAULT_COMMON_TYPES_URI,
 ): JsonObject {
@@ -472,7 +472,7 @@ export function catalogDocumentModel(catalog: SerializableCatalog): CatalogDocum
 
 function buildDocumentModel(catalog: SerializableCatalog): CatalogDocumentModel {
   const shaper = new SpecShaper(catalog.protocolVersion, catalog.commonTypesUri);
-  const computedDefs = new Map<string, z.ZodTypeAny>();
+  const computedDefs = new Map<string, A2uiSchema>();
   const shapedComponents = new Map<string, JsonSchemaObject>();
   for (const [name, comp] of catalog.components) {
     if (loadedDefinition(comp) || !isSpecComponentSchema(comp.schema)) continue;

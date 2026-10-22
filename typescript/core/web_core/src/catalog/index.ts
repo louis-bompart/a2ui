@@ -17,6 +17,16 @@
  * Catalog interfaces and component/function registration utilities.
  */
 
+export {
+  formatA2uiSchemaIssue,
+  isA2uiSchema,
+  validateA2uiSchema,
+  type A2uiSchema,
+  type A2uiSchemaResult,
+  type InferA2uiSchemaOutput,
+  type StandardJSONSchemaV1,
+  type StandardSchemaV1,
+} from './a2ui_schema.js';
 export * from './types.js';
 export * from './function_invoker.js';
 export {JsonComponentApi, JsonFunctionApi} from './json_entries.js';

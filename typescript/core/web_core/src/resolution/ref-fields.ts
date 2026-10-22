@@ -15,6 +15,7 @@
  */
 
 import {z} from 'zod';
+import {zodSchemaOf, type A2uiSchema} from '../catalog/a2ui_schema.js';
 import {childRefKindOf, type ChildRefKind} from '../types/child-ref-helpers.js';
 
 /**
@@ -61,7 +62,8 @@ const refFieldsCache = new WeakMap<z.ZodTypeAny, RefFields>();
  * @param schema Component Zod schema to inspect.
  * @returns Map of child-referencing property names to their reference kinds.
  */
-export function extractRefFields(schema: z.ZodTypeAny): RefFields {
+export function extractRefFields(model: A2uiSchema): RefFields {
+  const schema = zodSchemaOf(model);
   const cached = refFieldsCache.get(schema);
   if (cached) {
     return cached;

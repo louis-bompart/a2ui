@@ -16,6 +16,7 @@
 
 import {zodToJsonSchema} from 'zod-to-json-schema';
 import {SurfaceModel, ActionListener} from '../state/surface-model.js';
+import {isA2uiSchema, zodSchemaOf} from '../catalog/a2ui_schema.js';
 import {Catalog, ComponentApi, linkCatalogs} from '../catalog/types.js';
 import {exclusiveUnionOverride} from '../catalog/exclusive_union.js';
 import {cleanSchemaNode} from '../catalog/schema_generator.js';
@@ -319,8 +320,8 @@ export class MessageProcessor<T extends ComponentApi = ComponentApi> {
     for (const [name, comp] of catalog.components.entries()) {
       let props: Record<string, unknown> = {};
       let reqList: string[] = [];
-      if (comp.schema && typeof comp.schema === 'object' && 'safeParse' in comp.schema) {
-        const rawZod = zodToJsonSchema(comp.schema, {
+      if (isA2uiSchema(comp.schema)) {
+        const rawZod = zodToJsonSchema(zodSchemaOf(comp.schema), {
           target: 'jsonSchema2019-09',
           $refStrategy: 'none',
           override: exclusiveUnionOverride,
@@ -349,8 +350,8 @@ export class MessageProcessor<T extends ComponentApi = ComponentApi> {
     const functions: Array<Record<string, unknown>> = [];
     for (const fn of catalog.functions.values()) {
       let paramSchema: Record<string, unknown> = {type: 'object', properties: {}};
-      if (fn.schema && typeof fn.schema === 'object' && 'safeParse' in fn.schema) {
-        const rawZod = zodToJsonSchema(fn.schema, {
+      if (isA2uiSchema(fn.schema)) {
+        const rawZod = zodToJsonSchema(zodSchemaOf(fn.schema), {
           target: 'jsonSchema2019-09',
           $refStrategy: 'none',
           override: exclusiveUnionOverride,
@@ -368,7 +369,7 @@ export class MessageProcessor<T extends ComponentApi = ComponentApi> {
 
     let theme: Record<string, unknown> | undefined;
     if (catalog.themeSchema) {
-      const rawTheme = zodToJsonSchema(catalog.themeSchema, {
+      const rawTheme = zodToJsonSchema(zodSchemaOf(catalog.themeSchema), {
         target: 'jsonSchema2019-09',
         $refStrategy: 'none',
         override: exclusiveUnionOverride,

@@ -25,6 +25,7 @@ import {
   peekValue,
 } from '../reactivity/signals.js';
 import {z} from 'zod';
+import type {A2uiSchema} from '../catalog/a2ui_schema.js';
 import {DataModel, DataSubscription} from '../state/data-model.js';
 import {type FunctionCall, type Action} from '../types/common-types.js';
 import {MAX_FUNCTION_CALL_ARGS} from '../types/helpers.js';
@@ -39,7 +40,7 @@ import {Catalog, CatalogInterface} from '../catalog/types.js';
 import {SpecVersion} from '../spec_versions.js';
 import {IndexApi, SYSTEM_FUNCTIONS} from '../v1_0/functions/system_functions.js';
 
-const schemaKeysCache = new WeakMap<z.ZodTypeAny, Set<string> | null>();
+const schemaKeysCache = new WeakMap<object, Set<string> | null>();
 
 /** Identifier of the built-in catalog holding the v1.0 system functions. */
 const SYSTEM_FUNCTION_CATALOG_ID = 'a2ui:system-functions';
@@ -72,7 +73,7 @@ function getSystemFunctionCatalog(): Catalog<any> {
  * @param schema Zod schema to inspect.
  * @returns Set of allowed property names, or `null` if arbitrary keys are permitted or undetermined.
  */
-export function getKnownSchemaKeys(schema: z.ZodTypeAny): Set<string> | null {
+export function getKnownSchemaKeys(schema: A2uiSchema): Set<string> | null {
   if (schemaKeysCache.has(schema)) {
     return schemaKeysCache.get(schema) as Set<string> | null;
   }

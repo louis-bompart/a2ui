@@ -313,6 +313,7 @@
   "dependencies": {
     "@lit/context": "^1.1.6",
     "@preact/signals-core": "^1.14.2",
+    "@standard-schema/spec": "^1.1.0",
     "lit": "^3.3.3",
     "redos-detector": "^6.1.4",
     "validate-color": "^2.2.4",

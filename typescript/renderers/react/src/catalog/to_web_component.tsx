@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-import type {ZodTypeAny} from 'zod';
 import {
   isWebComponentImplementation,
   type WebComponentImplementation,
 } from '@a2ui/web_core/v0_9/universal';
+import type {A2uiSchema} from '@a2ui/web_core/v0_9';
 import type {ReactComponentImplementation} from '../react_component_implementation';
 import {ReactWcHost} from './react_host_element';
 
@@ -43,7 +43,7 @@ function computeTagName(name: string): string {
  * defined in `customElements` here; renderers define it with
  * `registerUniversalElement` when they render it.
  */
-export function toWebComponent<Schema extends ZodTypeAny = ZodTypeAny>(
+export function toWebComponent<Schema extends A2uiSchema = A2uiSchema<any>>(
   implementation: ReactComponentImplementation<Schema> | WebComponentImplementation<Schema>,
 ): WebComponentImplementation<Schema> {
   if (isWebComponentImplementation(implementation)) {

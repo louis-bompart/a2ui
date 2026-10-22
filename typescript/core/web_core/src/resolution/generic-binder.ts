@@ -15,6 +15,7 @@
  */
 
 import {z} from 'zod';
+import {zodSchemaOf, type A2uiSchema} from '../catalog/a2ui_schema.js';
 import {ComponentContext} from './component-context.js';
 import {
   AccessibilityAttributesSchema,
@@ -71,7 +72,8 @@ const behaviorCache = new WeakMap<z.ZodTypeAny, BehaviorNode>();
  * @param schema Zod schema to inspect.
  * @returns Root BehaviorNode describing schema properties.
  */
-export function scrapeSchemaBehavior(schema: z.ZodTypeAny): BehaviorNode {
+export function scrapeSchemaBehavior(model: A2uiSchema): BehaviorNode {
+  const schema = zodSchemaOf(model);
   const cached = behaviorCache.get(schema);
   if (cached) {
     return cached;
@@ -455,7 +457,7 @@ export class GenericBinder<T> {
    * @param context Component context providing state and event dispatching.
    * @param schema Zod schema defining the component properties.
    */
-  constructor(context: ComponentContext, schema: z.ZodTypeAny) {
+  constructor(context: ComponentContext, schema: A2uiSchema) {
     this.context = context;
     this.behaviorTree = scrapeSchemaBehavior(schema);
 

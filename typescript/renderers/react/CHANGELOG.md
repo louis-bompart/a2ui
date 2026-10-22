@@ -1,5 +1,7 @@
 ## Unreleased
 
+- `ReactComponentImplementation`, `ReactCatalogComponent` and `toWebComponent` take an `A2uiSchema` (any Standard Schema) as their `Schema` type parameter instead of a Zod `ZodTypeAny`.
+
 ## 0.14.0
 
 - Bump dependencies for compatibility with `@a2ui/web_core: ^0.14.0`.

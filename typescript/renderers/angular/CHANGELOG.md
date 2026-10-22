@@ -1,5 +1,7 @@
 ## Unreleased
 
+- `ComponentApiToProps` infers props with `InferredComponentApiSchemaType` instead of `z.infer`, and `AngularCatalog` takes an `A2uiSchema` (any Standard Schema) as its theme schema.
+
 ## 0.13.0
 
 - Bump dependencies for compatibility with `@a2ui/web_core: ^0.14.0`.

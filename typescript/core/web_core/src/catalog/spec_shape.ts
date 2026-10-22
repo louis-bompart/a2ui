@@ -35,6 +35,7 @@ import {isAtLeastVersion, normalizeVersionString, toCanonicalVersion} from '../c
 import {V08_STANDARD_DEFS} from '../v0_8/standard_defs.js';
 import {V09_STANDARD_DEFS} from '../v0_9/standard_defs.js';
 import {V10_STANDARD_DEFS} from '../v1_0/standard_defs.js';
+import {zodSchemaOf, type A2uiSchema} from './a2ui_schema.js';
 import {exclusiveUnionOverride} from './exclusive_union.js';
 import {getSpecAnnotation, type SpecAnnotation, type SpecMixin} from './spec_annotations.js';
 
@@ -314,10 +315,11 @@ export class SpecShaper {
    */
   componentSchema(
     name: string,
-    schema: z.ZodTypeAny,
+    model: A2uiSchema,
     allowedParents?: readonly string[],
     allowedChildren?: readonly string[],
   ): SpecSchema {
+    const schema = zodSchemaOf(model);
     const catalogDefs = new Map<string, z.ZodTypeAny>();
     let result: JsonObject;
     if (this.isV08) {
@@ -384,14 +386,14 @@ export class SpecShaper {
   functionSchema(
     name: string,
     fn: {
-      readonly schema: z.ZodTypeAny;
+      readonly schema: A2uiSchema;
       readonly returnType: string;
       readonly description?: string;
       readonly allowedCallers?: string;
       readonly requiresUserActivation?: boolean;
     },
   ): JsonObject {
-    const args = this.toJson(fn.schema);
+    const args = this.toJson(zodSchemaOf(fn.schema));
     const argsRequired = Array.isArray(args['required']) && args['required'].length > 0;
     const result: JsonObject = {type: 'object'};
     if (fn.description) result['description'] = fn.description;
@@ -417,8 +419,8 @@ export class SpecShaper {
    *
    * @param schema The model.
    */
-  defSchema(schema: z.ZodTypeAny): JsonObject {
-    return this.toJson(schema);
+  defSchema(schema: A2uiSchema): JsonObject {
+    return this.toJson(zodSchemaOf(schema));
   }
 
   /** Returns the reference a component's definition makes to a mixin. */

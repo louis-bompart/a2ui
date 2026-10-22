@@ -22,6 +22,16 @@
  */
 
 export * from '../catalog/function_invoker.js';
+export {
+  formatA2uiSchemaIssue,
+  isA2uiSchema,
+  validateA2uiSchema,
+  type A2uiSchema,
+  type A2uiSchemaResult,
+  type InferA2uiSchemaOutput,
+  type StandardJSONSchemaV1,
+  type StandardSchemaV1,
+} from '../catalog/a2ui_schema.js';
 export * from '../catalog/types.js';
 export * from '../common/events.js';
 export * from '../processing/message-processor.js';

@@ -22,6 +22,7 @@ import {
   A2uiExpressionError,
   Catalog,
   MessageProcessor,
+  validateA2uiSchema,
 } from '@a2ui/web_core/v0_9';
 import type {CallToolResult, ReadResourceResult} from '@modelcontextprotocol/sdk/types.js';
 import {CallMcpToolApi, MCP_CATALOG_ID} from '../index.js';
@@ -687,8 +688,13 @@ describe('callMcpTool', () => {
       assert.strictEqual(fnApi.name, 'callMcpTool');
       assert.strictEqual(fnApi.returnType, 'any');
 
-      const valid = fnApi.schema.parse({name: 'read_resource', arguments: {uri: 'a2ui://form'}});
-      assert.deepStrictEqual(valid, {name: 'read_resource', arguments: {uri: 'a2ui://form'}});
+      const valid = validateA2uiSchema(fnApi.schema, {
+        name: 'read_resource',
+        arguments: {uri: 'a2ui://form'},
+      });
+      assert.deepStrictEqual(valid, {
+        value: {name: 'read_resource', arguments: {uri: 'a2ui://form'}},
+      });
     });
 
     it('declares exactly the supported arguments in the published schema', () => {
