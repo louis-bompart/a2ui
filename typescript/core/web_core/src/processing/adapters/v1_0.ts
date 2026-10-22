@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import type {A2uiSchema} from '../../catalog/a2ui_schema.js';
 import {BaseVersionAdapter, ProtocolVersion} from './base.js';
 import {
   InternalComponentPayload,
@@ -27,7 +28,14 @@ import {AgentToRendererMessageSchema} from '../../v1_0/schema/agent-to-renderer.
  */
 export class V1Point0Adapter extends BaseVersionAdapter {
   readonly version: ProtocolVersion = 'v1.0';
-  protected readonly schema = AgentToRendererMessageSchema;
+
+  /**
+   * @param schema The schema that validates the messages, or `null` to skip
+   *     validating them. Defaults to the built-in Zod 3 schema.
+   */
+  constructor(schema: A2uiSchema | null = AgentToRendererMessageSchema) {
+    super(schema);
+  }
 
   protected getNativeActionKeys(): string[] {
     return [...INTERNAL_OPERATION_TYPES];

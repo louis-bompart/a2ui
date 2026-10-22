@@ -33,7 +33,9 @@ import {
   linkEntry,
   parseCatalogSchema,
 } from './schema_loader.js';
+import {defaultCatalogSchemaCompiler, type CatalogSchemaCompiler} from './schema_compiler.js';
 import type {JsonSchemaObject} from './spec_annotations.js';
+import {zod3CatalogSchemaCompiler} from './zod3_catalog_compiler.js';
 import {generateValidationSchema} from './schema_generator.js';
 import {
   deepCopyJson,
@@ -795,7 +797,7 @@ export class Catalog<
    * Constructs a schema-only Catalog from an authored A2UI catalog document.
    *
    * Each entry is a `JsonComponentApi` or `JsonFunctionApi` whose model is
-   * its definition as written, from which its Zod schema is derived on first
+   * its definition as written, from which its schema is compiled on first
    * use, and the catalog keeps the document-level fields, so `toJson` returns
    * the document unchanged.
    *
@@ -812,6 +814,9 @@ export class Catalog<
    *   catalog. It becomes the catalog's `id`, and replaces the document's own
    *   `catalogId` in `toJson`; a document that declares none still has none
    *   in `toJson`.
+   * @param loadOptions `schemaCompiler`: compiles the entries' definitions into
+   *   their schemas. Defaults to the compiler set with
+   *   `setDefaultCatalogSchemaCompiler`, else the built-in Zod 3 compiler.
    * @returns A new Catalog populated with component and function schemas.
    * @throws {Error} If the catalog ID is missing or not a string.
    */
@@ -819,6 +824,7 @@ export class Catalog<
     json: Record<string, any>,
     protocolVersion?: string,
     catalogId?: string,
+    loadOptions: {schemaCompiler?: CatalogSchemaCompiler} = {},
   ): CatalogApi {
     const {
       id,
@@ -826,7 +832,12 @@ export class Catalog<
       components,
       functions,
       ...options
-    } = parseCatalogSchema(json, protocolVersion, catalogId);
+    } = parseCatalogSchema(
+      json,
+      protocolVersion,
+      catalogId,
+      loadOptions.schemaCompiler ?? defaultCatalogSchemaCompiler(zod3CatalogSchemaCompiler),
+    );
     return new Catalog(id, resolvedVersion, components, functions, options);
   }
 

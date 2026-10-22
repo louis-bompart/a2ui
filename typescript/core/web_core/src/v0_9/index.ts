@@ -32,6 +32,12 @@ export {
   type StandardJSONSchemaV1,
   type StandardSchemaV1,
 } from '../catalog/a2ui_schema.js';
+export {
+  setDefaultCatalogSchemaCompiler,
+  type CatalogSchemaCompiler,
+  type CatalogSchemaContext,
+} from '../catalog/schema_compiler.js';
+export type {PeerCatalogSource} from '../catalog/schema_loader.js';
 export * from '../catalog/types.js';
 export * from '../common/events.js';
 export * from '../processing/message-processor.js';
