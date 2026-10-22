@@ -24,8 +24,15 @@ import {
   setValue,
   peekValue,
 } from '../reactivity/signals.js';
-import {z} from 'zod';
+import {
+  a2uiJsonSchemaOf,
+  coreJsonSchema,
+  isJsonObject,
+  objectProperties,
+  unionBranches,
+} from '../catalog/a2ui_json_schema.js';
 import type {A2uiSchema} from '../catalog/a2ui_schema.js';
+import type {JsonSchemaObject} from '../catalog/spec_annotations.js';
 import {DataModel, DataSubscription} from '../state/data-model.js';
 import {type FunctionCall, type Action} from '../types/common-types.js';
 import {MAX_FUNCTION_CALL_ARGS} from '../types/helpers.js';
@@ -65,81 +72,45 @@ function getSystemFunctionCatalog(): Catalog<any> {
 }
 
 /**
- * Extracts declared property keys from a Zod schema representing an object with fixed keys.
+ * Extracts declared property keys from a schema representing an object with fixed keys.
  *
- * Traverses Zod wrappers (`ZodEffects`, `ZodOptional`, `ZodNullable`, `ZodDefault`,
- * `ZodCatch`, `ZodIntersection`, `ZodUnion`) and returns the set of allowed key names.
+ * Reads the schema's JSON Schema view, looking through unions (`anyOf`,
+ * `oneOf`), intersections (`allOf`) and the wrappers that make a value
+ * optional or nullable, and returns the set of allowed key names.
  *
- * @param schema Zod schema to inspect.
+ * @param schema Schema to inspect.
  * @returns Set of allowed property names, or `null` if arbitrary keys are permitted or undetermined.
  */
 export function getKnownSchemaKeys(schema: A2uiSchema): Set<string> | null {
   if (schemaKeysCache.has(schema)) {
     return schemaKeysCache.get(schema) as Set<string> | null;
   }
-
-  const result = ((): Set<string> | null => {
-    let current: any = schema;
-    while (current) {
-      if (current instanceof z.ZodObject || current._def?.typeName === 'ZodObject') {
-        // If passthrough is enabled, arbitrary keys are allowed.
-        if (current._def?.unknownKeys === 'passthrough') {
-          return null;
-        }
-        const shape = typeof current.shape === 'function' ? current.shape() : current.shape;
-        if (shape && typeof shape === 'object') {
-          return new Set(Object.keys(shape));
-        }
-        return null;
-      }
-      if (current instanceof z.ZodEffects || current._def?.typeName === 'ZodEffects') {
-        current = current._def.schema;
-        continue;
-      }
-      if (
-        current instanceof z.ZodOptional ||
-        current instanceof z.ZodNullable ||
-        current._def?.typeName === 'ZodOptional' ||
-        current._def?.typeName === 'ZodNullable'
-      ) {
-        current = current._def.innerType;
-        continue;
-      }
-      if (current instanceof z.ZodDefault || current._def?.typeName === 'ZodDefault') {
-        current = current._def.innerType;
-        continue;
-      }
-      if (current instanceof z.ZodCatch || current._def?.typeName === 'ZodCatch') {
-        current = current._def.innerType;
-        continue;
-      }
-      if (current instanceof z.ZodIntersection || current._def?.typeName === 'ZodIntersection') {
-        const leftKeys = getKnownSchemaKeys(current._def.left);
-        const rightKeys = getKnownSchemaKeys(current._def.right);
-        if (!leftKeys || !rightKeys) {
-          return null;
-        }
-        return new Set([...leftKeys, ...rightKeys]);
-      }
-      if (current instanceof z.ZodUnion || current._def?.typeName === 'ZodUnion') {
-        const options: z.ZodTypeAny[] = current._def.options;
-        const allKeys = new Set<string>();
-        for (const opt of options) {
-          const k = getKnownSchemaKeys(opt);
-          if (!k) return null; // If any union branch allows arbitrary keys, do not filter.
-          for (const key of k) {
-            allKeys.add(key);
-          }
-        }
-        return allKeys;
-      }
-      return null;
-    }
-    return null;
-  })();
-
+  const result = knownKeysOf(a2uiJsonSchemaOf(schema));
   schemaKeysCache.set(schema, result);
   return result;
+}
+
+function knownKeysOf(node: JsonSchemaObject): Set<string> | null {
+  const current = coreJsonSchema(node);
+  const properties = objectProperties(current);
+  if (properties) {
+    // An object that allows additional properties allows arbitrary keys.
+    return current['additionalProperties'] === true ? null : new Set(Object.keys(properties));
+  }
+  const members = current['allOf'] ?? unionBranches(current);
+  if (!Array.isArray(members) || members.length === 0) {
+    return null;
+  }
+  const allKeys = new Set<string>();
+  for (const member of members) {
+    const keys = isJsonObject(member) ? knownKeysOf(member) : null;
+    // If any member allows arbitrary keys, do not filter.
+    if (!keys) return null;
+    for (const key of keys) {
+      allKeys.add(key);
+    }
+  }
+  return allKeys;
 }
 
 /**
@@ -1034,15 +1005,14 @@ export class DataContext {
    */
   private dispatchExpressionError(e: unknown, name: string): void {
     if (!this.surface) return;
-    if (
-      e instanceof z.ZodError ||
-      (typeof e === 'object' && e !== null && (e as {name?: string}).name === 'ZodError')
-    ) {
-      const zodErr = e as z.ZodError;
+    // A Zod error thrown by a function's own code, recognized by name so that
+    // web_core does not depend on Zod.
+    if (typeof e === 'object' && e !== null && (e as {name?: string}).name === 'ZodError') {
+      const zodErr = e as {message: string; errors?: unknown; issues?: unknown};
       const err = new A2uiExpressionError(
         `Validation failed for function '${name}': ${zodErr.message}`,
         name,
-        zodErr.errors ?? (zodErr as unknown as {issues?: unknown}).issues,
+        zodErr.errors ?? zodErr.issues,
       );
       this.surface.dispatchError({
         code: 'EXPRESSION_ERROR',

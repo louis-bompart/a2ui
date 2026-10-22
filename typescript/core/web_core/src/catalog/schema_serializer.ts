@@ -15,11 +15,9 @@
  * limitations under the License.
  */
 
-import {zodToJsonSchema} from 'zod-to-json-schema';
-
 import {isAtLeastVersion, toCanonicalVersion} from '../common/semver.js';
-import {isA2uiSchema, zodSchemaOf, type A2uiSchema} from './a2ui_schema.js';
-import {exclusiveUnionOverride} from './exclusive_union.js';
+import {copyA2uiJsonSchemaOf} from './a2ui_json_schema.js';
+import {isA2uiSchema, type A2uiSchema} from './a2ui_schema.js';
 import {loadedDefinition} from './json_entries.js';
 import {getSpecAnnotation, type JsonSchemaObject} from './spec_annotations.js';
 import {
@@ -220,30 +218,28 @@ export function retainedDefs(
 }
 
 /**
- * Rewrites `REF:<ref>|<description>` markers left by the loader and by
- * code-defined schemas into `$ref` nodes, keeping common types references
- * external (`<commonTypesUri>#/$defs/<name>`).
+ * Rewrites the `$ref`s of a schema's JSON Schema view, keeping common types
+ * references external (`<commonTypesUri>#/$defs/<name>`). A node with a
+ * `$ref` keeps only its `default` and `description`.
  *
  * @param node Schema node to rewrite in place.
  * @param localDefs Names of authored definitions that stay local references.
  * @param commonTypesUri The URI of the common types document.
  */
-function rewriteRefMarkers(
+function rewriteRefs(
   node: unknown,
   localDefs: ReadonlySet<string>,
   commonTypesUri: string = DEFAULT_COMMON_TYPES_URI,
 ): void {
   if (Array.isArray(node)) {
-    for (const item of node) rewriteRefMarkers(item, localDefs, commonTypesUri);
+    for (const item of node) rewriteRefs(item, localDefs, commonTypesUri);
     return;
   }
   if (!isObject(node)) return;
 
-  if (typeof node.description === 'string' && node.description.startsWith('REF:')) {
-    const content = node.description.substring(4);
-    const pipeIndex = content.indexOf('|');
-    const ref = pipeIndex === -1 ? content : content.substring(0, pipeIndex);
-    const desc = pipeIndex === -1 ? '' : content.substring(pipeIndex + 1);
+  if (typeof node.$ref === 'string') {
+    const ref = node.$ref;
+    const desc = typeof node.description === 'string' ? node.description : '';
     const savedDefault = node.default;
     for (const key of Object.keys(node)) delete node[key];
     // The first segment names the definition; a deeper pointer into it, such as
@@ -266,13 +262,13 @@ function rewriteRefMarkers(
     if (isObject(value) && Object.keys(value).length === 0) node[key] = true;
   }
   delete node.$schema;
-  for (const value of Object.values(node)) rewriteRefMarkers(value, localDefs, commonTypesUri);
+  for (const value of Object.values(node)) rewriteRefs(value, localDefs, commonTypesUri);
 }
 
 /**
  * Converts a schema into an unbundled JSON Schema object.
  */
-function zodToUnbundledJson(
+function toUnbundledJson(
   schema: A2uiSchema | undefined,
   localDefs: ReadonlySet<string>,
   commonTypesUri: string = DEFAULT_COMMON_TYPES_URI,
@@ -280,14 +276,10 @@ function zodToUnbundledJson(
   if (!isA2uiSchema(schema)) {
     return {type: 'object', properties: {}};
   }
-  const json = zodToJsonSchema(zodSchemaOf(schema), {
-    target: 'jsonSchema2019-09',
-    $refStrategy: 'none',
-    override: exclusiveUnionOverride,
-  }) as JsonObject;
+  const json = copyA2uiJsonSchemaOf(schema);
   delete json.definitions;
   delete json.$defs;
-  rewriteRefMarkers(json, localDefs, commonTypesUri);
+  rewriteRefs(json, localDefs, commonTypesUri);
   return json;
 }
 
@@ -312,7 +304,7 @@ function serializeComponentModel(
   localDefs: ReadonlySet<string>,
   commonTypesUri: string = DEFAULT_COMMON_TYPES_URI,
 ): JsonObject {
-  const json = zodToUnbundledJson(comp.schema, localDefs, commonTypesUri);
+  const json = toUnbundledJson(comp.schema, localDefs, commonTypesUri);
   const {
     component: _component,
     id: _id,
@@ -349,7 +341,7 @@ function serializeFunctionModel(
   asListItem: boolean,
   commonTypesUri: string = DEFAULT_COMMON_TYPES_URI,
 ): JsonObject {
-  const args = zodToUnbundledJson(fn.schema, localDefs, commonTypesUri);
+  const args = toUnbundledJson(fn.schema, localDefs, commonTypesUri);
   if (asListItem) {
     return {
       name,
@@ -396,7 +388,7 @@ function serializeThemeModel(
   localDefs: ReadonlySet<string>,
   commonTypesUri: string = DEFAULT_COMMON_TYPES_URI,
 ): JsonObject {
-  const json = zodToUnbundledJson(theme, localDefs, commonTypesUri);
+  const json = toUnbundledJson(theme, localDefs, commonTypesUri);
   return {
     type: 'object',
     properties: isObject(json.properties) ? json.properties : {},

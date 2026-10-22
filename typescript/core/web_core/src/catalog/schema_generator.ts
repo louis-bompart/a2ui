@@ -15,12 +15,10 @@
  * limitations under the License.
  */
 
-import {zodToJsonSchema} from 'zod-to-json-schema';
-
 import {isAtLeastVersion, toCanonicalVersion} from '../common/semver.js';
 import {CommonSchemas} from '../types/common-types.js';
-import {isA2uiSchema, zodSchemaOf} from './a2ui_schema.js';
-import {exclusiveUnionOverride} from './exclusive_union.js';
+import {a2uiJsonSchemaOf, copyA2uiJsonSchemaOf} from './a2ui_json_schema.js';
+import {isA2uiSchema} from './a2ui_schema.js';
 import {
   catalogDocumentModel,
   deepCopyJson,
@@ -82,16 +80,23 @@ function localDefName(ref: string): string | undefined {
 }
 
 /**
- * Transforms a schema node with a REF description into a `$ref` definition node.
+ * Transforms a schema node with a `$ref`, or with a REF description, into a
+ * `$ref` definition node, keeping only its `default` and `description`.
  */
 function transformRefDescriptionNode(obj: Record<string, unknown>): boolean {
-  if (typeof obj.description !== 'string' || !obj.description.startsWith('REF:')) {
+  let ref: string;
+  let desc: string;
+  if (typeof obj.$ref === 'string') {
+    ref = obj.$ref;
+    desc = typeof obj.description === 'string' ? obj.description : '';
+  } else if (typeof obj.description === 'string' && obj.description.startsWith('REF:')) {
+    const content = obj.description.substring(4);
+    const pipeIndex = content.indexOf('|');
+    ref = pipeIndex === -1 ? content : content.substring(0, pipeIndex);
+    desc = pipeIndex === -1 ? '' : content.substring(pipeIndex + 1);
+  } else {
     return false;
   }
-  const content = obj.description.substring(4);
-  const pipeIndex = content.indexOf('|');
-  const ref = pipeIndex === -1 ? content : content.substring(0, pipeIndex);
-  const desc = pipeIndex === -1 ? '' : content.substring(pipeIndex + 1);
 
   const savedDefault = obj.default;
   for (const key of Object.keys(obj)) {
@@ -535,11 +540,7 @@ function processTheme(
     return;
   }
 
-  const themeRaw = zodToJsonSchema(zodSchemaOf(catalog.themeSchema), {
-    target: 'jsonSchema2019-09',
-    $refStrategy: 'none',
-    override: exclusiveUnionOverride,
-  }) as JsonObject;
+  const themeRaw = copyA2uiJsonSchemaOf(catalog.themeSchema);
   cleanSchemaNode(themeRaw);
   mergeGeneratedDefs(themeRaw, defs, generated);
 
@@ -598,11 +599,7 @@ function extractZodComponentSchema(
   if (!isA2uiSchema(comp.schema)) {
     return {props: {}, reqList: [], additionalProps: undefined};
   }
-  const rawZod = zodToJsonSchema(zodSchemaOf(comp.schema), {
-    target: 'jsonSchema2019-09',
-    $refStrategy: 'none',
-    override: exclusiveUnionOverride,
-  }) as JsonObject;
+  const rawZod = copyA2uiJsonSchemaOf(comp.schema);
   cleanSchemaNode(rawZod);
   mergeGeneratedDefs(rawZod, defs, generated);
 
@@ -624,9 +621,10 @@ function extractZodComponentSchema(
  * `REF:` markers.
  */
 function zodComponentDescription(comp: ComponentApi): string | undefined {
-  const zodDescription = (comp.schema as {description?: unknown} | undefined)?.description;
-  return typeof zodDescription === 'string' && !zodDescription.startsWith('REF:')
-    ? zodDescription
+  if (!isA2uiSchema(comp.schema)) return undefined;
+  const view = a2uiJsonSchemaOf(comp.schema);
+  return view['$ref'] === undefined && typeof view['description'] === 'string'
+    ? view['description']
     : undefined;
 }
 
@@ -775,11 +773,7 @@ function buildFunctionArgsSchema(
     ) as JsonObject;
     restoreSourceRefs(paramSchemaObj, context.standardDefs, false);
   } else if (isA2uiSchema(fn.schema)) {
-    const rawZod = zodToJsonSchema(zodSchemaOf(fn.schema), {
-      target: 'jsonSchema2019-09',
-      $refStrategy: 'none',
-      override: exclusiveUnionOverride,
-    }) as JsonObject;
+    const rawZod = copyA2uiJsonSchemaOf(fn.schema);
     cleanSchemaNode(rawZod);
     mergeGeneratedDefs(rawZod, defs, generated);
     generated.push(rawZod);
