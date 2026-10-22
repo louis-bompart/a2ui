@@ -49,6 +49,35 @@ export function loadedDefinition(entry: object): JsonSchemaObject | undefined {
 }
 
 /**
+ * Where a loaded entry's definition comes from: what a catalog other than the
+ * one that loaded it needs to write the definition in its own document.
+ */
+export interface LoadedSource {
+  /** The `$defs` of the document, which the definition's local references point into. */
+  readonly defs: Readonly<Record<string, unknown>>;
+  /**
+   * How the document writes the common types document in references, if it
+   * refers to it.
+   */
+  readonly commonTypesUri?: string;
+}
+
+const sources = new WeakMap<object, LoadedSource>();
+
+/**
+ * Returns where the definition of a loaded entry, or of a copy of one with
+ * the same `schema`, comes from.
+ *
+ * @param entry A component or function.
+ */
+export function loadedSource(entry: object): LoadedSource | undefined {
+  const own = sources.get(entry);
+  if (own) return own;
+  const schema = (entry as {schema?: unknown}).schema;
+  return typeof schema === 'object' && schema !== null ? sources.get(schema) : undefined;
+}
+
+/**
  * A schema compiled from a definition on first use: by the first validation,
  * or the first read of its vendor or JSON Schema. Creating one, or copying the
  * entry holding it, compiles nothing, so a catalog can be loaded before the
@@ -136,16 +165,19 @@ export class JsonComponentApi {
    * @param name The component's name.
    * @param jsonSchema The component's definition, deeply frozen.
    * @param deriveSchema Derives the component's schema from its definition.
+   * @param source Where the definition comes from.
    */
   constructor(
     name: string,
     jsonSchema: JsonSchemaObject,
     deriveSchema: (jsonSchema: JsonSchemaObject) => A2uiSchema,
+    source?: LoadedSource,
   ) {
     this.name = name;
     this.schema = new DeferredSchema(() => deriveSchema(jsonSchema));
     definitions.set(this, jsonSchema);
     definitions.set(this.schema, jsonSchema);
+    if (source) sources.set(this.schema, source);
     defineViews(this, {
       allowedParents: () => stringList(jsonSchema['allowedParents']),
       allowedChildren: () => stringList(jsonSchema['allowedChildren']),
@@ -192,16 +224,19 @@ export class JsonFunctionApi {
    * @param jsonSchema The function's definition, deeply frozen.
    * @param deriveSchema Derives the schema of the function's arguments
    *     from its definition.
+   * @param source Where the definition comes from.
    */
   constructor(
     name: string,
     jsonSchema: JsonSchemaObject,
     deriveSchema: (jsonSchema: JsonSchemaObject) => A2uiSchema,
+    source?: LoadedSource,
   ) {
     this.name = name;
     this.schema = new DeferredSchema(() => deriveSchema(jsonSchema));
     definitions.set(this, jsonSchema);
     definitions.set(this.schema, jsonSchema);
+    if (source) sources.set(this.schema, source);
     // A map entry may write the call metadata as constant properties of the
     // call schema, before v1.0 lifted it to keywords.
     const props = isObject(jsonSchema['properties']) ? jsonSchema['properties'] : undefined;
@@ -227,4 +262,74 @@ export class JsonFunctionApi {
   get jsonSchema(): JsonSchemaObject {
     return definitions.get(this)!;
   }
+}
+
+/**
+ * A component a catalog loaded from its document, typed with the name and
+ * properties its definition declares.
+ *
+ * @template Name The component's name.
+ * @template Props The type of the component's properties.
+ */
+export type LoadedComponentApi<Name extends string, Props> = JsonComponentApi & {
+  readonly name: Name;
+  readonly schema: A2uiSchema<Props>;
+};
+
+/**
+ * A function a catalog loaded from its document, typed with the name, return
+ * type and arguments its definition declares.
+ *
+ * @template Name The function's name.
+ * @template ReturnType The function's return type identifier.
+ * @template Args The type of the function's arguments.
+ */
+export type LoadedFunctionApi<
+  Name extends string,
+  ReturnType extends string,
+  Args,
+> = JsonFunctionApi & {
+  readonly name: Name;
+  readonly returnType: ReturnType;
+  readonly schema: A2uiSchema<Args>;
+};
+
+/** The entries of a catalog that the typed accessors below read. */
+interface LoadedEntries {
+  readonly components: ReadonlyMap<string, object>;
+  readonly functions: ReadonlyMap<string, object>;
+}
+
+/**
+ * Returns a component of a catalog `Catalog.fromJson` loaded, typed as its
+ * definition declares it.
+ *
+ * @throws Error when the catalog has no such component.
+ */
+export function loadedComponentApi<Name extends string, Props>(
+  catalog: LoadedEntries,
+  name: Name,
+): LoadedComponentApi<Name, Props> {
+  const entry = catalog.components.get(name);
+  if (!(entry instanceof JsonComponentApi)) {
+    throw new Error(`The catalog loaded no component '${name}'.`);
+  }
+  return entry as LoadedComponentApi<Name, Props>;
+}
+
+/**
+ * Returns a function of a catalog `Catalog.fromJson` loaded, typed as its
+ * definition declares it.
+ *
+ * @throws Error when the catalog has no such function.
+ */
+export function loadedFunctionApi<Name extends string, ReturnType extends string, Args>(
+  catalog: LoadedEntries,
+  name: Name,
+): LoadedFunctionApi<Name, ReturnType, Args> {
+  const entry = catalog.functions.get(name);
+  if (!(entry instanceof JsonFunctionApi)) {
+    throw new Error(`The catalog loaded no function '${name}'.`);
+  }
+  return entry as LoadedFunctionApi<Name, ReturnType, Args>;
 }

@@ -45,28 +45,6 @@ const {
   generateZod,
 } = supersetGen;
 
-const catalogGen = await import(
-  new URL('../../../scripts/generate-catalog-schemas.mjs', import.meta.url).href
-);
-const {
-  toPascalCase,
-  extractRefName,
-  findInSchemaList,
-  findReferencedDefName,
-  applyModifiers,
-  generatePrimitiveZod,
-  generateObjectSchemaZod,
-  generateArrayZod,
-  generatePropertyZod,
-  mergeSchemaProperties,
-  flattenSchema,
-  extractFunctionDefinition,
-  generateComponentsFile,
-  generateFunctionsFile,
-  annotationFor,
-  literal,
-} = catalogGen;
-
 describe('zod-generator-core.mjs', () => {
   it('generates standard header comment with version and script source', () => {
     const header = getHeader('v1.0', 'scripts/test-source.mjs');
@@ -302,270 +280,86 @@ describe('generate-superset-common-types.mjs', () => {
   });
 });
 
-describe('generate-catalog-schemas.mjs', () => {
+const catalogTypesGen = await import(
+  new URL('../../../scripts/generate-catalog-types.mjs', import.meta.url).href
+);
+const {TypeWriter, toPascalCase} = catalogTypesGen;
+
+describe('generate-catalog-types.mjs', () => {
+  const commonTypes = {
+    $defs: {
+      DynamicString: {anyOf: [{type: 'string'}, {type: 'object'}]},
+      ComponentCommon: {
+        type: 'object',
+        properties: {id: {type: 'string'}, accessibility: {type: 'object'}},
+        required: ['id'],
+      },
+      Inlined: {type: 'array', items: {type: 'number'}},
+    },
+  };
+  const catalog = {
+    $defs: {Shared: {type: 'object', properties: {weight: {type: 'number'}}}},
+  };
+  const writer = () => new TypeWriter(catalog, commonTypes, new Set(['DynamicString']));
+
   it('converts function names to PascalCase identifiers', () => {
     assert.strictEqual(toPascalCase('@index'), 'Index');
     assert.strictEqual(toPascalCase('format_string'), 'FormatString');
     assert.strictEqual(toPascalCase('open-url'), 'OpenUrl');
-    assert.strictEqual(toPascalCase('validateEmail'), 'ValidateEmail');
   });
 
-  it('extracts definition names from $ref pointers', () => {
-    assert.strictEqual(extractRefName('#/$defs/DynamicNumber'), 'DynamicNumber');
-    assert.strictEqual(extractRefName('common_types.json#/$defs/ChildList'), 'ChildList');
-    assert.strictEqual(extractRefName('https://example.com/types/Button'), 'Button');
-    assert.strictEqual(extractRefName(null), null);
-  });
-
-  it('finds referenced definition names inside allOf or direct ref', () => {
-    const commonDefs = {DynamicString: {type: 'string'}};
+  it('writes common types the module exports by name, and inlines the others', () => {
+    const types = writer();
     assert.strictEqual(
-      findReferencedDefName({$ref: '#/$defs/DynamicString'}, commonDefs),
+      types.type({$ref: 'common_types.json#/$defs/DynamicString'}, catalog),
       'DynamicString',
     );
+    assert.strictEqual(types.type({$ref: 'common_types.json#/$defs/Inlined'}, catalog), 'number[]');
+    assert.deepStrictEqual([...types.usedCommonTypes], ['DynamicString']);
+  });
+
+  it('writes enums, constants, unions and primitives', () => {
+    const types = writer();
     assert.strictEqual(
-      findReferencedDefName({allOf: [{$ref: '#/$defs/DynamicString'}]}, commonDefs),
-      'DynamicString',
+      types.type({type: 'string', enum: ['a', 'b']}, catalog),
+      "'a' | 'b'".replace(/'/g, '"'),
     );
-    assert.strictEqual(findReferencedDefName({type: 'string'}, commonDefs), null);
-  });
-
-  it('locates definition in a list of schema catalog objects', () => {
-    const list = [{$ref: '#/$defs/DynamicString'}, {type: 'string'}];
-    const commonDefs = {DynamicString: {type: 'string'}};
-    assert.strictEqual(findInSchemaList(list, commonDefs), 'DynamicString');
-    assert.strictEqual(findInSchemaList([{type: 'string'}], commonDefs), null);
-  });
-
-  it('generates property zod code for ref, primitive, or object schemas', () => {
-    const commonDefs = {DynamicString: {type: 'string'}};
-    const usedImports = new Set<string>();
-    const code = generatePropertyZod(
-      'title',
-      {$ref: '#/$defs/DynamicString', description: 'text'},
-      ['title'],
-      commonDefs,
-      usedImports,
-    );
-    assert.strictEqual(code, "DynamicStringSchema.describe('REF:#/$defs/DynamicString|text')");
-    assert.ok(usedImports.has('DynamicStringSchema'));
-  });
-
-  it('annotates a property with what its Zod code does not express', () => {
-    const commonDefs = {DynamicString: {type: 'string'}};
-    const usedImports = new Set<string>();
-    const uri = 'https://example.com/common_types.json';
-    const code = generatePropertyZod(
-      'min',
-      {
-        allOf: [
-          {$ref: `${uri}#/$defs/DynamicString`},
-          {if: {type: 'string'}, then: {format: 'date'}},
-        ],
-        description: 'The minimum.',
-      },
-      [],
-      commonDefs,
-      usedImports,
-      uri,
-    );
+    assert.strictEqual(types.type({const: 3}, catalog), '3');
     assert.strictEqual(
-      code,
-      "spec(DynamicStringSchema.describe('REF:#/$defs/DynamicString|The minimum.'), " +
-        '{allOf: [{if: {type: "string"}, then: {format: "date"}}]}).optional()',
+      types.type({oneOf: [{type: 'string'}, {type: 'integer'}]}, catalog),
+      'string | number',
     );
-    const plainCode = generatePropertyZod(
-      'count',
-      {type: 'integer', minimum: 0},
-      ['count'],
-      commonDefs,
-      usedImports,
-      uri,
+    assert.strictEqual(types.type({description: 'anything'}, catalog), 'any');
+    assert.strictEqual(
+      types.type({type: 'object', additionalProperties: {type: 'boolean'}}, catalog),
+      'Record<string, boolean>',
     );
-    assert.strictEqual(plainCode, 'spec(z.number().int(), {keywords: {minimum: 0}})');
   });
 
-  it('derives annotations from the difference to the published schema', () => {
-    assert.strictEqual(annotationFor({type: 'string'}, {type: 'string'}), undefined);
-    assert.deepStrictEqual(
-      annotationFor(
+  it("flattens a component's mixins into its props, without the envelope", () => {
+    const types = writer();
+    const members = types.componentMembers({
+      allOf: [
+        {$ref: 'common_types.json#/$defs/ComponentCommon'},
+        {$ref: '#/$defs/Shared'},
         {
           type: 'object',
-          properties: {a: {}, b: {}},
-          required: ['b', 'a'],
-          additionalProperties: false,
-          anyOf: [{required: ['a']}],
-        },
-        {type: 'object', properties: {a: {}, b: {}}, required: ['a', 'b']},
-      ),
-      {
-        closure: 'additionalProperties',
-        required: ['b', 'a'],
-        keywords: {anyOf: [{required: ['a']}]},
-      },
-    );
-    assert.throws(() => annotationFor({}, {type: 'string'}), /Cannot remove 'type'/);
-    assert.throws(
-      () => annotationFor({description: 'a'}, {description: 'b'}),
-      /Cannot reproduce 'description'/,
-    );
-  });
-
-  it('writes annotation literals with bare identifier keys', () => {
-    assert.strictEqual(literal({a: 1, 'b-c': [true, null]}), '{a: 1, "b-c": [true, null]}');
-  });
-
-  it('merges properties across multiple component schemas', () => {
-    const target: {properties: Record<string, unknown>; required: string[]} = {
-      properties: {a: {type: 'string'}},
-      required: ['a'],
-    };
-    const source = {properties: {b: {type: 'number'}}, required: ['b']};
-    mergeSchemaProperties(target, source);
-    assert.ok(target.properties.a);
-    assert.ok(target.properties.b);
-    assert.deepStrictEqual(target.required, ['a', 'b']);
-  });
-
-  it('applies modifiers such as default, description, and optionality', () => {
-    const code = applyModifiers('z.string()', {default: 'defaultVal', description: 'text'}, false);
-    assert.strictEqual(code, "z.string().default('defaultVal').describe('text').optional()");
-
-    const requiredCode = applyModifiers('z.number()', {}, true);
-    assert.strictEqual(requiredCode, 'z.number()');
-  });
-
-  it('generates primitive Zod expressions', () => {
-    assert.strictEqual(generatePrimitiveZod({type: 'string'}), 'z.string()');
-    assert.strictEqual(generatePrimitiveZod({type: 'integer'}), 'z.number().int()');
-    assert.strictEqual(generatePrimitiveZod({type: 'number'}), 'z.number()');
-    assert.strictEqual(generatePrimitiveZod({type: 'boolean'}), 'z.boolean()');
-    assert.strictEqual(generatePrimitiveZod({type: 'object'}), null);
-  });
-
-  it('generates object and array Zod expressions', () => {
-    const usedImports = new Set<string>();
-    const commonDefs = {DynamicString: {type: 'string'}};
-
-    const objCode = generateObjectSchemaZod(
-      {
-        properties: {
-          label: {$ref: '#/$defs/DynamicString'},
-        },
-        required: ['label'],
-      },
-      commonDefs,
-      usedImports,
-    );
-    assert.ok(objCode.includes('z.object({'));
-    assert.ok(usedImports.has('DynamicStringSchema'));
-
-    const arrCode = generateArrayZod(
-      {
-        type: 'array',
-        items: {$ref: '#/$defs/DynamicString'},
-        minItems: 2,
-      },
-      commonDefs,
-      usedImports,
-    );
-    assert.ok(
-      arrCode.includes("z.array(DynamicStringSchema.describe('REF:#/$defs/DynamicString')).min(2)"),
-    );
-  });
-
-  it('flattens allOf inheritance and resolves catalog and common definitions', () => {
-    const catalogDefs = {
-      BaseWidget: {
-        properties: {
-          id: {type: 'string'},
-          weight: {type: 'number'},
-        },
-        required: ['id'],
-      },
-    };
-    const schema = {
-      allOf: [
-        {$ref: '#/$defs/BaseWidget'},
-        {
           properties: {
-            title: {type: 'string'},
+            component: {const: 'Box'},
+            label: {$ref: 'common_types.json#/$defs/DynamicString'},
           },
-          required: ['title'],
+          required: ['component', 'label'],
         },
       ],
-    };
-
-    const flattened = flattenSchema(schema, catalogDefs);
-    assert.ok(flattened.properties.id);
-    assert.ok(flattened.properties.weight);
-    assert.ok(flattened.properties.title);
-    assert.ok(flattened.required.includes('id'));
-    assert.ok(flattened.required.includes('title'));
-  });
-
-  it('extracts function definitions with returnType and args schema', () => {
-    const funcDef = {
-      description: 'Formats a timestamp string.',
-      properties: {
-        returnType: {const: 'string'},
-        args: {
-          type: 'object',
-          properties: {
-            date: {type: 'string'},
-            format: {type: 'string'},
-          },
-          required: ['date'],
-        },
-      },
-    };
-
-    const extracted = extractFunctionDefinition('formatDate', funcDef);
-    assert.strictEqual(extracted.returnType, 'string');
-    assert.strictEqual(extracted.description, 'Formats a timestamp string.');
-    assert.ok(extracted.argsProps.date);
-    assert.ok(extracted.argsProps.format);
-    assert.deepStrictEqual(extracted.argsRequired, ['date']);
-  });
-
-  it('generates complete components and functions TypeScript code', () => {
-    const catalogJson = {
-      components: {
-        Card: {
-          properties: {
-            title: {type: 'string'},
-            component: {const: 'Card'},
-            id: {type: 'string'},
-          },
-          required: ['title', 'component', 'id'],
-        },
-      },
-      functions: {
-        formatCurrency: {
-          description: 'Formats monetary value',
-          properties: {
-            returnType: {const: 'string'},
-            args: {
-              type: 'object',
-              properties: {
-                amount: {type: 'number'},
-              },
-              required: ['amount'],
-            },
-          },
-        },
-      },
-    };
-
-    const compFile = generateComponentsFile('v1.0', catalogJson, {});
-    assert.ok(compFile.includes('export const CardApi = {'));
-    assert.ok(compFile.includes('satisfies ComponentApi;'));
-    assert.ok(compFile.includes('BASIC_COMPONENTS: ComponentApi[]'));
-
-    const funcFile = generateFunctionsFile('v1.0', catalogJson, {});
-    assert.ok(funcFile.includes('export const FormatCurrencyApi = {'));
-    assert.ok(funcFile.includes("name: 'formatCurrency' as const"));
-    assert.ok(funcFile.includes("returnType: 'string' as const"));
-    assert.ok(funcFile.includes('BASIC_FUNCTION_APIS'));
+    });
+    assert.deepStrictEqual(
+      members.map(({key, required}: {key: string; required: boolean}) => [key, required]),
+      [
+        ['accessibility', false],
+        ['weight', false],
+        ['label', true],
+      ],
+    );
+    assert.match(types.members(members), /label: DynamicString;/);
   });
 });

@@ -165,8 +165,8 @@
         "scripts/generate-standard-defs.mjs",
         "scripts/generate-zod-schemas.mjs",
         "scripts/generate-superset-common-types.mjs",
-        "scripts/generate-catalog-schemas.mjs",
         "scripts/zod-generator-core.mjs",
+        "scripts/generate-catalog-types.mjs",
         "src/types/helpers.ts",
         "src/types/child-ref-helpers.ts",
         "src/v0_9/schema/helpers.ts",
@@ -197,7 +197,10 @@
         "src/v1_0/schema/catalog-definition.ts",
         "src/v1_0/schema/index.ts",
         "src/catalogs/basic/v1/components/basic_components.ts",
-        "src/catalogs/basic/v1/functions/basic_functions_api.ts"
+        "src/catalogs/basic/v1/functions/basic_functions_api.ts",
+        "src/v0_8/basic_catalog/basic_catalog_document.ts",
+        "src/v0_9/basic_catalog/basic_catalog_document.ts",
+        "src/catalogs/basic/v1/basic_catalog_document.ts"
       ]
     },
     "copy-spec": {

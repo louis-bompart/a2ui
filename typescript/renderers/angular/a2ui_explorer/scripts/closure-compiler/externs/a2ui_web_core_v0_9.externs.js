@@ -296,3 +296,97 @@ function SurfaceModelExterns() {}
  */
 function MarkdownRendererExterns() {}
 /** @type {?} */ MarkdownRendererExterns.prototype.render;
+
+/**
+ * Externs for the JSON Schema keywords and catalog document keys that
+ * `Catalog.fromJson`, the catalog schema compiler and the serializers read
+ * from a catalog document (`typescript/core/web_core/src/catalog/`). A
+ * catalog document is data, such as the published basic catalog documents
+ * the basic catalogs parse, so its keys are never renamed.
+ * @record
+ * @struct
+ */
+function CatalogDocumentExterns() {}
+/** @type {?} */ CatalogDocumentExterns.prototype.$schema;
+/** @type {?} */ CatalogDocumentExterns.prototype.$id;
+/** @type {?} */ CatalogDocumentExterns.prototype.$ref;
+/** @type {?} */ CatalogDocumentExterns.prototype.$defs;
+/** @type {?} */ CatalogDocumentExterns.prototype.$comment;
+/** @type {?} */ CatalogDocumentExterns.prototype.definitions;
+/** @type {?} */ CatalogDocumentExterns.prototype.allOf;
+/** @type {?} */ CatalogDocumentExterns.prototype.anyOf;
+/** @type {?} */ CatalogDocumentExterns.prototype.oneOf;
+/** @type {?} */ CatalogDocumentExterns.prototype.not;
+/** @type {?} */ CatalogDocumentExterns.prototype.if;
+/** @type {?} */ CatalogDocumentExterns.prototype.then;
+/** @type {?} */ CatalogDocumentExterns.prototype.else;
+/** @type {?} */ CatalogDocumentExterns.prototype.enum;
+/** @type {?} */ CatalogDocumentExterns.prototype.const;
+/** @type {?} */ CatalogDocumentExterns.prototype.default;
+/** @type {?} */ CatalogDocumentExterns.prototype.examples;
+/** @type {?} */ CatalogDocumentExterns.prototype.required;
+/** @type {?} */ CatalogDocumentExterns.prototype.additionalProperties;
+/** @type {?} */ CatalogDocumentExterns.prototype.unevaluatedProperties;
+/** @type {?} */ CatalogDocumentExterns.prototype.patternProperties;
+/** @type {?} */ CatalogDocumentExterns.prototype.propertyNames;
+/** @type {?} */ CatalogDocumentExterns.prototype.minProperties;
+/** @type {?} */ CatalogDocumentExterns.prototype.maxProperties;
+/** @type {?} */ CatalogDocumentExterns.prototype.prefixItems;
+/** @type {?} */ CatalogDocumentExterns.prototype.additionalItems;
+/** @type {?} */ CatalogDocumentExterns.prototype.contains;
+/** @type {?} */ CatalogDocumentExterns.prototype.minItems;
+/** @type {?} */ CatalogDocumentExterns.prototype.maxItems;
+/** @type {?} */ CatalogDocumentExterns.prototype.uniqueItems;
+/** @type {?} */ CatalogDocumentExterns.prototype.minLength;
+/** @type {?} */ CatalogDocumentExterns.prototype.maxLength;
+/** @type {?} */ CatalogDocumentExterns.prototype.pattern;
+/** @type {?} */ CatalogDocumentExterns.prototype.minimum;
+/** @type {?} */ CatalogDocumentExterns.prototype.maximum;
+/** @type {?} */ CatalogDocumentExterns.prototype.exclusiveMinimum;
+/** @type {?} */ CatalogDocumentExterns.prototype.exclusiveMaximum;
+/** @type {?} */ CatalogDocumentExterns.prototype.multipleOf;
+/** @type {?} */ CatalogDocumentExterns.prototype.discriminator;
+/** @type {?} */ CatalogDocumentExterns.prototype.propertyName;
+/** @type {?} */ CatalogDocumentExterns.prototype.deprecated;
+/** @type {?} */ CatalogDocumentExterns.prototype.readOnly;
+/** @type {?} */ CatalogDocumentExterns.prototype.writeOnly;
+/** @type {?} */ CatalogDocumentExterns.prototype.protocolVersion;
+/** @type {?} */ CatalogDocumentExterns.prototype.instructions;
+/** @type {?} */ CatalogDocumentExterns.prototype.parameters;
+/** @type {?} */ CatalogDocumentExterns.prototype.allowedCallers;
+/** @type {?} */ CatalogDocumentExterns.prototype.allowedParents;
+/** @type {?} */ CatalogDocumentExterns.prototype.allowedChildren;
+/** @type {?} */ CatalogDocumentExterns.prototype.requiresUserActivation;
+/** @type {?} */ CatalogDocumentExterns.prototype.themeSchema;
+/** @type {?} */ CatalogDocumentExterns.prototype.anyComponent;
+/** @type {?} */ CatalogDocumentExterns.prototype.anyFunction;
+
+/**
+ * Externs for the names of the common types, which `Catalog.fromJson` looks
+ * up by the name a catalog document's `$ref` gives
+ * (`typescript/core/web_core/src/types/common-types.ts`, `CommonSchemas`).
+ * @record
+ * @struct
+ */
+function CommonSchemasExterns() {}
+/** @type {?} */ CommonSchemasExterns.prototype.ComponentId;
+/** @type {?} */ CommonSchemasExterns.prototype.DataBinding;
+/** @type {?} */ CommonSchemasExterns.prototype.FunctionCall;
+/** @type {?} */ CommonSchemasExterns.prototype.DynamicString;
+/** @type {?} */ CommonSchemasExterns.prototype.DynamicBoolean;
+/** @type {?} */ CommonSchemasExterns.prototype.AccessibilityAttributes;
+/** @type {?} */ CommonSchemasExterns.prototype.Extensions;
+/** @type {?} */ CommonSchemasExterns.prototype.ComponentCommon;
+/** @type {?} */ CommonSchemasExterns.prototype.ChildList;
+/** @type {?} */ CommonSchemasExterns.prototype.DynamicValue;
+/** @type {?} */ CommonSchemasExterns.prototype.DynamicNumber;
+/** @type {?} */ CommonSchemasExterns.prototype.DynamicStringList;
+/** @type {?} */ CommonSchemasExterns.prototype.CheckRule;
+/** @type {?} */ CommonSchemasExterns.prototype.Checkable;
+/** @type {?} */ CommonSchemasExterns.prototype.Action;
+/** @type {?} */ CommonSchemasExterns.prototype.CallId;
+/** @type {?} */ CommonSchemasExterns.prototype.Child;
+/** @type {?} */ CommonSchemasExterns.prototype.FunctionCommon;
+/** @type {?} */ CommonSchemasExterns.prototype.IndexSystemFunction;
+/** @type {?} */ CommonSchemasExterns.prototype.Surface;
+/** @type {?} */ CommonSchemasExterns.prototype.FunctionResponse;

@@ -29,6 +29,7 @@ import {
   registerUniversalElement,
   type WebComponentImplementation,
 } from '../../index.js';
+import {validateA2uiSchema} from '../../../catalog/a2ui_schema.js';
 import {ImageApi} from '../../../v0_9/basic_catalog/components/basic_components.js';
 
 describe('Image Component', () => {
@@ -142,25 +143,29 @@ describe('Image Component', () => {
         url: 'https://example.com/image.png',
         description: 'An example image',
       };
-      const parsed = ImageApi.schema.parse(validImage);
-      assert.strictEqual(parsed.url, 'https://example.com/image.png');
-      assert.strictEqual(parsed.description, 'An example image');
+      const result = validateA2uiSchema(ImageApi.schema, validImage);
+      assert.ok(!result.issues);
+      const parsed = result.value;
+      assert.strictEqual(parsed?.url, 'https://example.com/image.png');
+      assert.strictEqual(parsed?.description, 'An example image');
     });
 
     it('should parse valid image without description', () => {
       const validImage = {
         url: 'https://example.com/image.png',
       };
-      const parsed = ImageApi.schema.parse(validImage);
-      assert.strictEqual(parsed.url, 'https://example.com/image.png');
-      assert.strictEqual(parsed.description, undefined);
+      const result = validateA2uiSchema(ImageApi.schema, validImage);
+      assert.ok(!result.issues);
+      const parsed = result.value;
+      assert.strictEqual(parsed?.url, 'https://example.com/image.png');
+      assert.strictEqual(parsed?.description, undefined);
     });
 
     it('should throw on invalid image', () => {
       const invalidImage = {
         url: 123, // Invalid type
       };
-      assert.throws(() => ImageApi.schema.parse(invalidImage));
+      assert.ok(validateA2uiSchema(ImageApi.schema, invalidImage).issues);
     });
   });
 });

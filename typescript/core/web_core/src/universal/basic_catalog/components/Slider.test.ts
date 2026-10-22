@@ -29,6 +29,7 @@ import {
   registerUniversalElement,
   type WebComponentImplementation,
 } from '../../index.js';
+import {formatA2uiSchemaIssue, validateA2uiSchema} from '../../../catalog/a2ui_schema.js';
 import {SliderApi} from '../../../v0_9/basic_catalog/components/basic_components.js';
 
 describe('Slider Component', () => {
@@ -167,22 +168,12 @@ describe('Slider Component', () => {
         max: 100,
         value: 50,
       };
-      SliderApi.schema.parse(validSlider);
+      assert.strictEqual(validateA2uiSchema(SliderApi.schema, validSlider).issues, undefined);
 
-      const result = SliderApi.schema.safeParse({
-        ...validSlider,
-        step: 5,
-      });
-
-      assert.strictEqual(result.success, false);
-      if (!result.success) {
-        assert.strictEqual(
-          result.error.issues.some(
-            issue => issue.code === 'unrecognized_keys' && issue.keys.includes('step'),
-          ),
-          true,
-        );
-      }
+      const result = validateA2uiSchema(SliderApi.schema, {...validSlider, step: 5});
+      assert.ok(
+        result.issues?.map(formatA2uiSchemaIssue).some(message => message.includes("'step'")),
+      );
     });
   });
 });

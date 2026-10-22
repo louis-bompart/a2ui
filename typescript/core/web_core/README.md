@@ -100,7 +100,7 @@ const Badge = {
 const document = new Catalog('https://example.com/badges', '0.9', [Badge]).toJson();
 ```
 
-The built-in basic catalogs are built this way. Their components and functions are Zod models generated from the published catalog documents by `scripts/generate-catalog-schemas.mjs` (v0.9 and v1) and `src/v0_8/scripts/generate-catalog.mjs` (v0.8), which run as part of `yarn generate-zod-schemas`. For every schema node, the generator predicts the JSON Schema that `toJson` derives from the Zod code it emits, and annotates the node with the difference from the published schema. `toJson` of each basic catalog computes its published document from the models; no copy of the document is kept in the package.
+The built-in basic catalogs are loaded from their published catalog documents instead. `scripts/generate-catalog-types.mjs`, run by `src/<version>/scripts/generate-catalog.mjs` as part of `yarn generate-zod-schemas`, writes each document as a TypeScript constant (`basic_catalog_document.ts`), loads it with `Catalog.fromJson`, and writes a `<Name>Props` (or `<Name>Args`) interface derived from each entry's JSON Schema definition, with a typed `<Name>Api` that is the loaded entry. Each entry compiles its schema on first use, with the default catalog schema compiler, and `toJson` of each basic catalog writes its published document.
 
 ## Development
 

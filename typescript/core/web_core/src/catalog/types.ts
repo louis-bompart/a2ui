@@ -323,6 +323,35 @@ export interface CatalogDocumentOptions {
 }
 
 /**
+ * Returns the document-level fields of a catalog, such as those a catalog
+ * `fromJson` loaded, so that a catalog built from other entries writes the
+ * same document.
+ *
+ * @param catalog The catalog to read the fields of.
+ */
+export function catalogDocumentOptions(
+  catalog: CatalogInterface<ComponentApi, FunctionApi>,
+): CatalogDocumentOptions {
+  return {
+    instructions: catalog.instructions,
+    schemaUri: catalog.schemaUri,
+    schemaId: catalog.schemaId,
+    title: catalog.title,
+    description: catalog.description,
+    declaredProtocolVersion: catalog.declaredProtocolVersion,
+    declaresCatalogId: catalog.declaresCatalogId,
+    declaresComponents: catalog.declaresComponents,
+    functionsLayout: catalog.functionsLayout,
+    unions: catalog.unions,
+    defs: catalog.defs,
+    extensionFields: catalog.extensionFields,
+    commonTypesUri: catalog.commonTypesUri,
+    themeLocation: catalog.themeLocation,
+    defModels: catalog.defModels,
+  };
+}
+
+/**
  * Optional settings for a `Catalog`, beyond its id, version and entries.
  */
 export interface CatalogOptions extends CatalogDocumentOptions {

@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-import {Catalog} from '../../../catalog/types.js';
+import {Catalog, catalogDocumentOptions} from '../../../catalog/types.js';
 import {BasicCatalogThemeSchema} from '../../../universal/basic_catalog/theme.js';
 import type {WebComponentImplementation} from '../../../universal/index.js';
-import {BASIC_CATALOG_DOCUMENT_OPTIONS} from './components/basic_components.js';
+import {LOADED_BASIC_CATALOG} from './basic_catalog_document.js';
 import {
   A2uiAudioPlayer,
   A2uiButton,
@@ -44,11 +44,11 @@ import {BASIC_FUNCTIONS} from './functions/basic_functions.js';
  * The v1 basic catalog of A2UI components implemented via Web Components
  * (Custom Elements).
  *
- * Its components and functions are the models generated from the published
- * catalog document (see scripts/generate-catalog-schemas.mjs), listed in the
- * document's order, and its document-level fields are those the generated
- * models carry, so `toJson` computes the published document from the models
- * and `validationSchema` is built from it.
+ * Its components and functions are those `Catalog.fromJson` loads from the
+ * published catalog document (see scripts/generate-catalog-types.mjs), listed
+ * in the document's order, and its document-level fields are the document's,
+ * so `toJson` writes the published document and `validationSchema` is built
+ * from it.
  */
 export const basicCatalog = new Catalog<WebComponentImplementation>(
   'https://a2ui.org/specification/v1_0/catalogs/basic/catalog.json',
@@ -75,7 +75,7 @@ export const basicCatalog = new Catalog<WebComponentImplementation>(
   ],
   BASIC_FUNCTIONS,
   {
+    ...catalogDocumentOptions(LOADED_BASIC_CATALOG),
     themeSchema: BasicCatalogThemeSchema,
-    ...BASIC_CATALOG_DOCUMENT_OPTIONS,
   },
 );

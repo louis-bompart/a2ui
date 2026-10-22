@@ -19,7 +19,12 @@ import {assertUax31Identifier} from '../common/uax31.js';
 import {A2uiCatalogError} from '../errors.js';
 import {CommonSchemas} from '../types/common-types.js';
 import type {A2uiSchema} from './a2ui_schema.js';
-import {DeferredSchema, JsonComponentApi, JsonFunctionApi} from './json_entries.js';
+import {
+  DeferredSchema,
+  JsonComponentApi,
+  JsonFunctionApi,
+  type LoadedSource,
+} from './json_entries.js';
 import type {CatalogSchemaCompiler} from './schema_compiler.js';
 import {
   buildComponentUnion,
@@ -653,6 +658,7 @@ function parseFunctionDefinitions(
   permittedNames: Set<string> | undefined,
   protocolVersion: string,
   compiler: CatalogSchemaCompiler,
+  source: LoadedSource,
 ): FunctionApi[] {
   const atLeastV10 = isAtLeastVersion(protocolVersion, '1.0');
   const result: FunctionApi[] = [];
@@ -676,13 +682,17 @@ function parseFunctionDefinitions(
           continue;
         }
         const build = (peers: readonly PeerCatalogSource[]): FunctionApi => {
-          const entry = new JsonFunctionApi(fn.name, fn as Record<string, unknown>, definition =>
-            compiler.functionArgs(
-              definition['parameters'] && typeof definition['parameters'] === 'object'
-                ? (definition['parameters'] as Record<string, unknown>)
-                : undefined,
-              {document: rootDoc, peers, protocolVersion},
-            ),
+          const entry = new JsonFunctionApi(
+            fn.name,
+            fn as Record<string, unknown>,
+            definition =>
+              compiler.functionArgs(
+                definition['parameters'] && typeof definition['parameters'] === 'object'
+                  ? (definition['parameters'] as Record<string, unknown>)
+                  : undefined,
+                {document: rootDoc, peers, protocolVersion},
+              ),
+            source,
           );
           entryBuilders.set(entry, build);
           return entry;
@@ -704,12 +714,16 @@ function parseFunctionDefinitions(
       }
       if (!defn || typeof defn !== 'object') continue;
       const build = (peers: readonly PeerCatalogSource[]): FunctionApi => {
-        const entry = new JsonFunctionApi(name, defn as Record<string, unknown>, definition =>
-          compiler.functionArgs(functionArgsSchema(definition), {
-            document: rootDoc,
-            peers,
-            protocolVersion,
-          }),
+        const entry = new JsonFunctionApi(
+          name,
+          defn as Record<string, unknown>,
+          definition =>
+            compiler.functionArgs(functionArgsSchema(definition), {
+              document: rootDoc,
+              peers,
+              protocolVersion,
+            }),
+          source,
         );
         entryBuilders.set(entry, build);
         return entry;
@@ -798,6 +812,7 @@ function parseCatalogComponents(
   permittedNames: Set<string> | undefined,
   protocolVersion: string,
   compiler: CatalogSchemaCompiler,
+  source: LoadedSource,
 ): ComponentApi[] {
   const atLeastV10 = isAtLeastVersion(protocolVersion, '1.0');
   const components: ComponentApi[] = [];
@@ -820,8 +835,12 @@ function parseCatalogComponents(
       continue;
     }
     const build = (peers: readonly PeerCatalogSource[]): ComponentApi => {
-      const entry = new JsonComponentApi(name, rawComp, definition =>
-        compiler.component(definition, {document: catalogSchema, peers, protocolVersion}),
+      const entry = new JsonComponentApi(
+        name,
+        rawComp,
+        definition =>
+          compiler.component(definition, {document: catalogSchema, peers, protocolVersion}),
+        source,
       );
       entryBuilders.set(entry, build);
       return entry;
@@ -913,12 +932,15 @@ export function parseCatalogSchema(
     DEFAULT_PROTOCOL_VERSION;
 
   const componentsMap = (catalogSchema.components as Record<string, unknown>) ?? {};
+  const commonTypesUri = findCommonTypesUri(catalogSchema);
+  const source: LoadedSource = {defs: defs ?? {}, commonTypesUri};
   const components = parseCatalogComponents(
     componentsMap,
     catalogSchema,
     permittedNames,
     resolvedVersion,
     compiler,
+    source,
   );
 
   // Filter permitted functions via anyFunction.oneOf if declared
@@ -931,6 +953,7 @@ export function parseCatalogSchema(
     permittedFunctionNames,
     resolvedVersion,
     compiler,
+    source,
   );
 
   const themeSchema = parseThemeSchema(catalogSchema, defs, resolvedVersion, compiler);
@@ -946,7 +969,35 @@ export function parseCatalogSchema(
     functions,
     themeSchema,
     ...readDocumentFields(catalogSchema, components, functions),
+    ...(commonTypesUri === undefined ? {} : {commonTypesUri}),
   };
+}
+
+/**
+ * Returns how a catalog document writes the common types document in its
+ * references, such as `https://a2ui.org/specification/v0_9/common_types.json`
+ * or `common_types.json`, or `undefined` for a document that does not refer
+ * to it.
+ */
+function findCommonTypesUri(node: unknown): string | undefined {
+  if (Array.isArray(node)) {
+    for (const item of node) {
+      const found = findCommonTypesUri(item);
+      if (found !== undefined) return found;
+    }
+    return undefined;
+  }
+  if (!isPlainObject(node)) return undefined;
+  const ref = node['$ref'];
+  if (typeof ref === 'string') {
+    const {doc} = splitRef(ref);
+    if (isDocumentNamed(doc, COMMON_TYPES_DOCUMENT)) return doc;
+  }
+  for (const value of Object.values(node)) {
+    const found = findCommonTypesUri(value);
+    if (found !== undefined) return found;
+  }
+  return undefined;
 }
 
 /** Top-level keys of a catalog document that `CatalogDocumentOptions` models. */

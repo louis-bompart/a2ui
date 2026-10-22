@@ -50,6 +50,8 @@ The external interfaces are organized into four functional files:
 - `DateFnsFormattersExterns`: `date-fns` formatting token tables so date formatting expressions can resolve token strings at runtime.
 - `DateFnsLocalizeExterns`: `date-fns` localization methods and builder options used during locale formatting.
 - `DateFnsLookupKeysExterns`: String keys in `date-fns` lookup dictionaries used when formatting weekdays and time periods in examples like Weather Current.
+- `CatalogDocumentExterns`: JSON Schema keywords and catalog document keys that `Catalog.fromJson`, the catalog schema compiler and the serializers read from catalog documents, such as the published documents the basic catalogs load.
+- `CommonSchemasExterns`: Names of the common types, which `Catalog.fromJson` looks up by the name a catalog document's `$ref` gives.
 
 ### Angular framework and runtime (angular_framework.externs.js)
 

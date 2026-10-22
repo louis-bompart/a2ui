@@ -16,38 +16,24 @@
 
 import {join, dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {generateCatalogApi} from '../../../scripts/generate-catalog-schemas.mjs';
+import {generateJsonCatalog} from '../../../scripts/generate-catalog-types.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const v09Dir = join(__dirname, '..');
-const rootDir = join(v09Dir, '..', '..');
+const repoRoot = join(v09Dir, '..', '..', '..', '..', '..');
 
 console.log('Generating v0.9 Basic Catalog APIs...');
 
-generateCatalogApi({
-  version: 'v0_9',
-  catalogPath: join(
-    rootDir,
-    '..',
-    '..',
-    '..',
-    'specification',
-    'v0_9',
-    'catalogs',
-    'basic',
-    'catalog.json',
-  ),
-  commonTypesPath: join(
-    rootDir,
-    '..',
-    '..',
-    '..',
-    'specification',
-    'v0_9',
-    'json',
-    'common_types.json',
-  ),
+generateJsonCatalog({
+  catalogPath: join(repoRoot, 'specification', 'v0_9', 'catalogs', 'basic', 'catalog.json'),
+  commonTypesPath: join(repoRoot, 'specification', 'v0_9', 'json', 'common_types.json'),
+  commonTypesModulePath: join(v09Dir, 'schema', 'common-types.ts'),
+  commonTypesImportPath: '../../schema/common-types.js',
+  catalogModuleImportPath: '../../../catalog',
+  protocolVersion: '0.9',
+  documentOutPath: join(v09Dir, 'basic_catalog', 'basic_catalog_document.ts'),
   componentsOutPath: join(v09Dir, 'basic_catalog', 'components', 'basic_components.ts'),
+  specFunctionApisAlias: 'V09_SPEC_FUNCTION_APIS',
   functionsOutPath: join(v09Dir, 'basic_catalog', 'functions', 'basic_functions_api.ts'),
 });
 

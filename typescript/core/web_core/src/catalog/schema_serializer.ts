@@ -18,7 +18,7 @@
 import {isAtLeastVersion, toCanonicalVersion} from '../common/semver.js';
 import {copyA2uiJsonSchemaOf} from './a2ui_json_schema.js';
 import {isA2uiSchema, type A2uiSchema} from './a2ui_schema.js';
-import {loadedDefinition} from './json_entries.js';
+import {loadedDefinition, loadedSource} from './json_entries.js';
 import {getSpecAnnotation, type JsonSchemaObject} from './spec_annotations.js';
 import {
   DEFAULT_COMMON_TYPES_URI,
@@ -165,6 +165,63 @@ export function entryDefinition(
     if (!(name in available) && !UNION_DEF_NAMES.has(name)) return undefined;
   }
   return definition;
+}
+
+/**
+ * Returns the definition of an entry `Catalog.fromJson` loaded, written for a
+ * catalog with `defs` whose document writes the common types document as
+ * `commonTypesUri`, or `undefined` when the catalog should build the entry
+ * from its model instead.
+ *
+ * An entry reused from another catalog document brings the definitions of
+ * that document it references, which are added to `defs` unless `defs`
+ * already has definitions of the same names, and its references to the
+ * common types are written against `commonTypesUri`.
+ *
+ * @param entry A component or function.
+ * @param defs The definitions of the catalog that holds the entry, which the
+ *     definitions the entry brings are added to.
+ * @param commonTypesUri How the catalog's document writes the common types document.
+ */
+function reusedEntryDefinition(
+  entry: ComponentApi | FunctionApi,
+  defs: JsonObject,
+  commonTypesUri: string,
+): JsonSchemaObject | undefined {
+  const definition = loadedDefinition(entry);
+  if (!isObject(definition)) return undefined;
+  const source = loadedSource(entry);
+  const retarget =
+    source?.commonTypesUri !== undefined && source.commonTypesUri !== commonTypesUri
+      ? (node: unknown) => deepFreeze(retargetCommonTypesRefs(node, commonTypesUri))
+      : (node: unknown) => node;
+  if (!entryDefinition(entry, defs)) {
+    if (!source) return undefined;
+    const missing = [...reachableDefs([definition], source.defs)].filter(
+      name => !(name in defs) && !UNION_DEF_NAMES.has(name),
+    );
+    if (missing.some(name => !(name in source.defs))) return undefined;
+    for (const name of missing) defs[name] = retarget(source.defs[name]);
+  }
+  return retarget(definition) as JsonSchemaObject;
+}
+
+/** Returns a copy of `node` whose references to the common types point to `commonTypesUri`. */
+function retargetCommonTypesRefs(node: unknown, commonTypesUri: string): unknown {
+  if (Array.isArray(node)) return node.map(item => retargetCommonTypesRefs(item, commonTypesUri));
+  if (!isObject(node)) return node;
+  const out: JsonObject = {};
+  for (const [key, value] of Object.entries(node)) {
+    if (key === '$ref' && typeof value === 'string') {
+      const hash = value.indexOf('#');
+      const doc = hash === -1 ? value : value.slice(0, hash);
+      const isCommonTypes = doc === 'common_types.json' || doc.endsWith('/common_types.json');
+      out[key] = isCommonTypes ? `${commonTypesUri}${hash === -1 ? '' : value.slice(hash)}` : value;
+    } else {
+      out[key] = retargetCommonTypesRefs(value, commonTypesUri);
+    }
+  }
+  return out;
 }
 
 /**
@@ -495,13 +552,17 @@ function buildDocumentModel(catalog: SerializableCatalog): CatalogDocumentModel 
     extensionFields['styles'] = isObject(theme['properties']) ? theme['properties'] : {};
   }
 
+  const commonTypesUri = catalog.commonTypesUri ?? DEFAULT_COMMON_TYPES_URI;
   const components = new Map<string, JsonSchemaObject | undefined>();
   for (const [name, comp] of catalog.components) {
-    components.set(name, shapedComponents.get(name) ?? entryDefinition(comp, defs));
+    components.set(
+      name,
+      shapedComponents.get(name) ?? reusedEntryDefinition(comp, defs, commonTypesUri),
+    );
   }
   const functions = new Map<string, JsonSchemaObject | undefined>();
   for (const [name, fn] of catalog.functions) {
-    const loaded = entryDefinition(fn, defs);
+    const loaded = reusedEntryDefinition(fn, defs, commonTypesUri);
     functions.set(
       name,
       loaded ??

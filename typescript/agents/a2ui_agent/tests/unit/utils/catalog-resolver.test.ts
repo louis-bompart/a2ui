@@ -17,7 +17,12 @@
 import {describe, it, expect} from 'vitest';
 import {resolveCatalogs} from '../../../src/utils/catalog-resolver.js';
 import {CatalogConfig} from '../../../src/processor/catalog-config.js';
-import {Catalog, CatalogApi, V10RendererCapabilities} from '../../../src/internal/web-core.js';
+import {
+  Catalog,
+  CatalogApi,
+  V10RendererCapabilities,
+  validateA2uiSchema,
+} from '../../../src/internal/web-core.js';
 import {ComponentPruningTransformer} from '../../../src/catalog-transformers/pruning.js';
 import {A2uiCatalogError, A2uiValidationError} from '../../../src/errors.js';
 
@@ -160,7 +165,7 @@ describe('resolveCatalogs with cross-catalog references', () => {
     },
   };
   const derivedAccepts = (catalog: CatalogApi, value: Record<string, unknown>) =>
-    catalog.components.get('Derived')!.schema.safeParse(value).success;
+    validateA2uiSchema(catalog.components.get('Derived')!.schema, value).issues === undefined;
 
   it('links per-request copies and leaves the registered catalogs unchanged', () => {
     const peer = Catalog.fromJson(peerDocument);
