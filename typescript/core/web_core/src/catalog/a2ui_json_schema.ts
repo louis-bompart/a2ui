@@ -30,8 +30,9 @@ import type {z} from 'zod';
 import {zodToJsonSchema, type OverrideCallback} from 'zod-to-json-schema';
 
 import {A2uiCatalogError} from '../errors.js';
-import {zodSchemaOf, type A2uiSchema, type StandardJSONSchemaV1} from './a2ui_schema.js';
+import type {A2uiSchema, StandardJSONSchemaV1} from './a2ui_schema.js';
 import {exclusiveUnionOverride} from './exclusive_union.js';
+import {schemaLibraries} from './schema_library.js';
 import {getSpecAnnotationOfDef, type JsonSchemaObject} from './spec_annotations.js';
 
 /** The common types definitions that a schema marked with `markChildRef` refers to. */
@@ -78,16 +79,15 @@ function convert(schema: A2uiSchema): Record<string, unknown> {
     delete json['$schema'];
     return json;
   }
-  let zodSchema: z.ZodTypeAny;
-  try {
-    zodSchema = zodSchemaOf(schema);
-  } catch {
-    throw new A2uiCatalogError(
-      `Schema from '${schema['~standard']?.vendor}' implements no JSON Schema conversion: ` +
-        'A2UI requires Standard JSON Schema (https://standardschema.dev/json-schema).',
-    );
+  for (const library of schemaLibraries()) {
+    const json = library.toJsonSchema?.(schema);
+    if (json) return json;
   }
-  return zod3ToJsonSchema(zodSchema);
+  throw new A2uiCatalogError(
+    `Schema from '${schema['~standard']?.vendor}' implements no JSON Schema conversion: ` +
+      'A2UI requires Standard JSON Schema (https://standardschema.dev/json-schema), ' +
+      'or an installed schema library that converts it.',
+  );
 }
 
 /**

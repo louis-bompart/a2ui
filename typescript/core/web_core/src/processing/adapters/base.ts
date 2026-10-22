@@ -19,6 +19,7 @@ import {
   validateA2uiSchema,
   type A2uiSchema,
 } from '../../catalog/a2ui_schema.js';
+import {schemaLibraryPart, type ProtocolSchemas} from '../../catalog/schema_library.js';
 import {InternalOperation} from '../operations.js';
 import {A2uiValidationError} from '../../errors.js';
 import {SemVer, normalizeVersionString, toSemVer, toCanonicalVersion} from '../../common/semver.js';
@@ -184,10 +185,21 @@ export abstract class BaseVersionAdapter implements VersionAdapter {
   abstract readonly version: ProtocolVersion;
 
   /**
-   * @param schema The schema that validates this version's messages, or
-   *     `null` to skip validating them.
+   * @param schema The schema that validates this version's messages, `null`
+   *     to skip validating them, or `undefined` to validate them with the
+   *     schema of the installed schema libraries, if they have one.
    */
-  constructor(protected readonly schema: A2uiSchema | null) {}
+  constructor(private readonly ownSchema?: A2uiSchema | null) {}
+
+  /** The canonical protocol version whose schema validates this adapter's messages. */
+  protected abstract readonly schemaVersion: keyof ProtocolSchemas;
+
+  /** The schema that validates this version's messages, if any. */
+  protected get schema(): A2uiSchema | null | undefined {
+    return this.ownSchema !== undefined
+      ? this.ownSchema
+      : schemaLibraryPart(library => library.protocolSchemas)?.[this.schemaVersion];
+  }
 
   /** Canonical catalog protocol versions compatible with this adapter. */
   get compatibleCatalogVersions(): ReadonlySet<string> {
@@ -249,9 +261,10 @@ export abstract class BaseVersionAdapter implements VersionAdapter {
       );
     }
 
-    if (this.schema) {
+    const schema = this.schema;
+    if (schema) {
       const preparedPayload = this.preparePayloadForValidation(msgObj);
-      const result = validateA2uiSchema(this.schema, preparedPayload);
+      const result = validateA2uiSchema(schema, preparedPayload);
       if (result.issues) {
         const formattedErrors = result.issues.map(formatA2uiSchemaIssue).join('; ');
         throw new A2uiValidationError(

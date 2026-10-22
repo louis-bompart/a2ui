@@ -28,7 +28,7 @@ import {basicCatalog as v09BasicCatalog} from '../v0_9/basic_catalog/catalog.js'
 import {A2uiText as V09Text} from '../v0_9/basic_catalog/components/index.js';
 import {exclusiveUnion} from './exclusive_union.js';
 import {JsonComponentApi, JsonFunctionApi} from './json_entries.js';
-import {zodSchemaOf} from './a2ui_schema.js';
+import {isZod3Schema, zodSchemaOf} from './a2ui_schema.js';
 import {DEFAULT_PROTOCOL_VERSION} from './schema_loader.js';
 import {spec, specDef} from './spec_annotations.js';
 import {
@@ -47,6 +47,8 @@ function readRepoJson(relativePath: string): Record<string, any> {
  * annotation, so that the catalog generates its definition from Zod.
  */
 function plain<E extends ComponentApi | FunctionApi>(entry: E): E {
+  // A schema of another library, such as that of `@index`, has no annotation.
+  if (!isZod3Schema(entry.schema)) return entry;
   const schema = zodSchemaOf(entry.schema);
   return {...entry, schema: schema.describe(schema.description as string)};
 }

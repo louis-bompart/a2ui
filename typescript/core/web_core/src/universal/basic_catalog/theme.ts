@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {z} from 'zod';
+import {defineA2uiSchema} from '../../catalog/a2ui_schema.js';
 import validateColor from 'validate-color';
 
 export const HEX_COLOR_REGEX = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
@@ -43,35 +43,60 @@ export function isValidCssColor(color: unknown): boolean {
   return typeof fn === 'function' ? fn(trimmed) : false;
 }
 
-/**
- * Zod schema defining the theme configuration for the basic catalog.
- * Conforms to `specification/v0_9/catalogs/basic/catalog.json#/$defs/theme`.
- */
-export const BasicCatalogThemeSchema = z
-  .object({
-    primaryColor: z
-      .string()
-      .refine(
-        val => isValidCssColor(val),
-        "primaryColor must be a valid CSS color (e.g. '#00BFFF', '#17e', 'red', 'rgb(255, 0, 0)')",
-      )
-      .optional()
-      .describe(
-        "The primary brand color used for highlights (e.g., primary buttons, active borders). Renderers may generate variants of this color for different contexts. Format: Hexadecimal code, named color, or functional notation (e.g., '#00BFFF', 'red', 'rgb(255, 0, 0)').",
-      ),
-    iconUrl: z
-      .string()
-      .optional()
-      .describe(
-        'A URL for an image that identifies the agent or tool associated with the surface.',
-      ),
-    agentDisplayName: z
-      .string()
-      .optional()
-      .describe(
-        'Text to be displayed next to the surface to identify the agent or tool that created it.',
-      ),
-  })
-  .passthrough();
+/** The theme configuration of the basic catalog. Other keys are kept as given. */
+export interface BasicCatalogTheme {
+  /** The primary brand color used for highlights. */
+  primaryColor?: string;
+  /** A URL for an image that identifies the agent or tool associated with the surface. */
+  iconUrl?: string;
+  /** Text to be displayed next to the surface to identify the agent or tool. */
+  agentDisplayName?: string;
+  [key: string]: unknown;
+}
 
-export type BasicCatalogTheme = z.infer<typeof BasicCatalogThemeSchema>;
+const THEME_PROPERTIES = {
+  primaryColor: {
+    type: 'string',
+    description:
+      "The primary brand color used for highlights (e.g., primary buttons, active borders). Renderers may generate variants of this color for different contexts. Format: Hexadecimal code, named color, or functional notation (e.g., '#00BFFF', 'red', 'rgb(255, 0, 0)').",
+  },
+  iconUrl: {
+    type: 'string',
+    description:
+      'A URL for an image that identifies the agent or tool associated with the surface.',
+  },
+  agentDisplayName: {
+    type: 'string',
+    description:
+      'Text to be displayed next to the surface to identify the agent or tool that created it.',
+  },
+};
+
+/**
+ * Schema of the theme configuration for the basic catalog. Conforms to
+ * `specification/v0_9/catalogs/basic/catalog.json#/$defs/theme`, and also
+ * checks that `primaryColor` is a valid CSS color.
+ */
+export const BasicCatalogThemeSchema = defineA2uiSchema<BasicCatalogTheme>(
+  {type: 'object', properties: THEME_PROPERTIES, additionalProperties: true},
+  value => {
+    if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+      return {issues: [{message: 'Expected object'}]};
+    }
+    const theme = value as Record<string, unknown>;
+    const issues: {message: string; path: string[]}[] = [];
+    for (const key of Object.keys(THEME_PROPERTIES)) {
+      if (theme[key] !== undefined && typeof theme[key] !== 'string') {
+        issues.push({message: `Expected string, received ${typeof theme[key]}`, path: [key]});
+      }
+    }
+    if (typeof theme['primaryColor'] === 'string' && !isValidCssColor(theme['primaryColor'])) {
+      issues.push({
+        message:
+          "primaryColor must be a valid CSS color (e.g. '#00BFFF', '#17e', 'red', 'rgb(255, 0, 0)')",
+        path: ['primaryColor'],
+      });
+    }
+    return issues.length > 0 ? {issues} : {value: {...theme}};
+  },
+);

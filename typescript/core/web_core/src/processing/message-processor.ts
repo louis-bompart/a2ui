@@ -47,7 +47,7 @@ import {
   ProtocolVersion,
   VersionAdapterResolver,
 } from './adapters/base.js';
-import {RendererCapabilities} from '../v1_0/schema/index.js';
+import type {RendererCapabilities} from '../v1_0/schema/index.js';
 import type {ServerToClientMessage as V08ServerToClientMessage} from '../v0_8/types/types.js';
 import type {
   A2uiMessage as V09A2uiMessage,

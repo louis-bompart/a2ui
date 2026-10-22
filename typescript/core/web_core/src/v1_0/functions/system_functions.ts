@@ -14,12 +14,51 @@
  * limitations under the License.
  */
 
-import {z} from 'zod';
-
+import {defineA2uiSchema} from '../../catalog/a2ui_schema.js';
 import {createFunctionImplementation, FunctionImplementation} from '../../catalog/types.js';
 import {A2uiValidationError} from '../../errors.js';
 import {resolveContextIndex} from '../../resolution/data-context.js';
-import {DataBindingSchema, FunctionCallSchema} from '../schema/common-types.js';
+import type {DataBinding, FunctionCall} from '../schema/common-types.js';
+
+/** Whether a value is written as a data binding or a function call. */
+function isBindingOrCall(value: unknown): boolean {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+  const obj = value as Record<string, unknown>;
+  return ['path', '@path', 'call', '@call'].some(key => typeof obj[key] === 'string');
+}
+
+/**
+ * The arguments of `@index`: an optional `offset`, a DynamicNumber, so that a
+ * payload may bind it to a path or a nested call. Once resolved, the value is
+ * coerced to a number.
+ */
+const IndexArgsSchema = defineA2uiSchema<{offset?: DataBinding | FunctionCall | number}>(
+  {
+    type: 'object',
+    properties: {
+      offset: {
+        anyOf: [
+          {$ref: 'common_types.json#/$defs/DataBinding'},
+          {$ref: 'common_types.json#/$defs/FunctionCall'},
+          {type: 'number'},
+        ],
+      },
+    },
+    additionalProperties: false,
+  },
+  value => {
+    if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+      return {issues: [{message: 'Expected object'}]};
+    }
+    const {offset} = value as Record<string, unknown>;
+    if (offset === undefined) return {value: {}};
+    if (isBindingOrCall(offset)) return {value: {offset: offset as DataBinding | FunctionCall}};
+    const coerced = Number(offset);
+    return Number.isNaN(coerced)
+      ? {issues: [{message: 'Expected number, received nan', path: ['offset']}]}
+      : {value: {offset: coerced}};
+  },
+);
 
 /**
  * System function definition for computing iteration indices in array contexts.
@@ -33,15 +72,8 @@ export const IndexApi = {
   returnType: 'number' as const,
   /** Scope of callers permitted to invoke this function. */
   allowedCallers: 'rendererOnly' as const,
-  /**
-   * Zod schema validating function arguments.
-   *
-   * `offset` is a DynamicNumber, so a payload may bind it to a path or a
-   * nested call. Once resolved, the value is coerced to a number.
-   */
-  schema: z.object({
-    'offset': z.union([DataBindingSchema, FunctionCallSchema, z.coerce.number()]).optional(),
-  }),
+  /** Schema validating function arguments. */
+  schema: IndexArgsSchema,
 };
 
 /**

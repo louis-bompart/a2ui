@@ -18,12 +18,12 @@ import {Catalog, FunctionImplementation} from '../catalog/types.js';
 import {DataContext} from '../resolution/data-context.js';
 import {isSignal, getValue} from '../reactivity/signals.js';
 import {SurfaceModel} from '../state/surface-model.js';
-import {FunctionCall} from '../v1_0/schema/common-types.js';
-import {
+import type {FunctionCall} from '../v1_0/schema/common-types.js';
+import type {
   CallRendererFunctionMessage,
   AgentFunctionResponseMessage,
 } from '../v1_0/schema/agent-to-renderer.js';
-import {
+import type {
   RendererFunctionResponseMessage,
   CallAgentFunctionMessage,
 } from '../v1_0/schema/renderer-to-agent.js';

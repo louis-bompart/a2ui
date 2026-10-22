@@ -19,13 +19,13 @@ import {isAtLeastVersion, toCanonicalVersion} from '../common/semver.js';
 import {copyA2uiJsonSchemaOf} from './a2ui_json_schema.js';
 import {isA2uiSchema, type A2uiSchema} from './a2ui_schema.js';
 import {loadedDefinition, loadedSource} from './json_entries.js';
-import {getSpecAnnotation, type JsonSchemaObject} from './spec_annotations.js';
 import {
-  DEFAULT_COMMON_TYPES_URI,
-  isSpecComponentSchema,
-  isSpecFunctionSchema,
-  SpecShaper,
-} from './spec_shape.js';
+  schemaLibraries,
+  type CatalogDocumentContext,
+  type CatalogDocumentShaper,
+} from './schema_library.js';
+import type {JsonSchemaObject} from './spec_annotations.js';
+import {DEFAULT_COMMON_TYPES_URI} from './standard_defs.js';
 import type {CatalogUnions, ComponentApi, FunctionApi} from './types.js';
 
 /** Names of the union definitions a catalog computes from its entries. */
@@ -519,36 +519,59 @@ export function catalogDocumentModel(catalog: SerializableCatalog): CatalogDocum
   return model;
 }
 
+/**
+ * Returns what the first installed schema library's document shaper that
+ * shapes a schema writes for it, if one does.
+ */
+function shapeWith<T>(shape: (shaper: CatalogDocumentShaper) => T | undefined): T | undefined {
+  for (const library of schemaLibraries()) {
+    const shaped = library.documentShaper ? shape(library.documentShaper) : undefined;
+    if (shaped !== undefined) return shaped;
+  }
+  return undefined;
+}
+
+function shapeFunction(
+  name: string,
+  fn: FunctionApi,
+  context: CatalogDocumentContext,
+): JsonSchemaObject | undefined {
+  const shaped = shapeWith(shaper => shaper.function(name, fn, context));
+  return shaped ? deepFreeze(shaped) : undefined;
+}
+
 function buildDocumentModel(catalog: SerializableCatalog): CatalogDocumentModel {
-  const shaper = new SpecShaper(catalog.protocolVersion, catalog.commonTypesUri);
-  const computedDefs = new Map<string, A2uiSchema>();
+  const context = {
+    protocolVersion: catalog.protocolVersion,
+    commonTypesUri: catalog.commonTypesUri,
+  };
+  const computedDefs = new Map<string, JsonSchemaObject>();
   const shapedComponents = new Map<string, JsonSchemaObject>();
   for (const [name, comp] of catalog.components) {
-    if (loadedDefinition(comp) || !isSpecComponentSchema(comp.schema)) continue;
-    const {schema, catalogDefs} = shaper.componentSchema(
-      name,
-      comp.schema,
-      comp.allowedParents,
-      comp.allowedChildren,
-    );
-    shapedComponents.set(name, deepFreeze(schema));
-    for (const [defName, defModel] of catalogDefs) computedDefs.set(defName, defModel);
+    if (loadedDefinition(comp)) continue;
+    const shaped = shapeWith(shaper => shaper.component(name, comp, context));
+    if (!shaped) continue;
+    shapedComponents.set(name, deepFreeze(shaped.definition));
+    for (const [defName, definition] of shaped.defs) computedDefs.set(defName, definition);
   }
   for (const defModel of catalog.defModels ?? []) {
-    const defName = getSpecAnnotation(defModel)?.defName;
-    if (defName === undefined) {
+    const shaped = shapeWith(shaper => shaper.definition(defModel, context));
+    if (shaped?.name === undefined) {
       throw new Error('A catalog definition model must be named with specDef().');
     }
-    computedDefs.set(defName, defModel);
+    computedDefs.set(shaped.name, shaped.definition);
   }
 
   const defs: JsonObject = {...catalog.defs};
-  for (const [defName, defModel] of computedDefs) {
-    if (!(defName in defs)) defs[defName] = shaper.defSchema(defModel);
+  for (const [defName, definition] of computedDefs) {
+    if (!(defName in defs)) defs[defName] = definition;
   }
   const extensionFields: JsonObject = {...catalog.extensionFields};
   if (catalog.themeLocation === 'styles' && catalog.themeSchema && !hasAuthoredTheme(catalog)) {
-    const theme = shaper.defSchema(catalog.themeSchema);
+    const themeSchema = catalog.themeSchema;
+    const theme =
+      shapeWith(shaper => shaper.definition(themeSchema, context))?.definition ??
+      toUnbundledJson(themeSchema, new Set(), catalog.commonTypesUri);
     extensionFields['styles'] = isObject(theme['properties']) ? theme['properties'] : {};
   }
 
@@ -565,10 +588,7 @@ function buildDocumentModel(catalog: SerializableCatalog): CatalogDocumentModel 
     const loaded = reusedEntryDefinition(fn, defs, commonTypesUri);
     functions.set(
       name,
-      loaded ??
-        (!loadedDefinition(fn) && isSpecFunctionSchema(fn.schema)
-          ? deepFreeze(shaper.functionSchema(name, fn))
-          : undefined),
+      loaded ?? (loadedDefinition(fn) ? undefined : shapeFunction(name, fn, context)),
     );
   }
   return {
@@ -666,11 +686,14 @@ export function serializeCatalogDocument(catalog: SerializableCatalog): JsonObje
   const defs: JsonObject = deepCopyJson({...model.defs});
   const themeLocation = catalog.themeLocation ?? (isAtLeastV10 ? undefined : 'defs');
   if (themeLocation === 'defs' && catalog.themeSchema && !hasAuthoredTheme(model)) {
-    defs.theme = getSpecAnnotation(catalog.themeSchema)
-      ? new SpecShaper(catalog.protocolVersion, catalog.commonTypesUri).defSchema(
-          catalog.themeSchema,
-        )
-      : serializeThemeModel(catalog.themeSchema, localDefs, commonTypesUri);
+    const themeSchema = catalog.themeSchema;
+    defs.theme =
+      shapeWith(shaper =>
+        shaper.definition(themeSchema, {
+          protocolVersion: catalog.protocolVersion,
+          commonTypesUri: catalog.commonTypesUri,
+        }),
+      )?.definition ?? serializeThemeModel(themeSchema, localDefs, commonTypesUri);
   }
   const unions = catalog.unions ?? {
     anyComponent: isAtLeastV10 || catalog.components.size > 0,

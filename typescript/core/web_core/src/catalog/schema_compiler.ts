@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
+import {A2uiCatalogError} from '../errors.js';
 import type {A2uiSchema} from './a2ui_schema.js';
+import {schemaLibraryPart} from './schema_library.js';
 import type {PeerCatalogSource} from './schema_loader.js';
 import type {JsonSchemaObject} from './spec_annotations.js';
 
@@ -59,9 +61,10 @@ export interface CatalogSchemaCompiler {
 let defaultCompiler: CatalogSchemaCompiler | undefined;
 
 /**
- * Sets the compiler `Catalog.fromJson` uses when it is given none.
+ * Sets the compiler `Catalog.fromJson` uses when it is given none, over that
+ * of the installed schema libraries.
  *
- * @param compiler The compiler, or `undefined` to restore the built-in one.
+ * @param compiler The compiler, or `undefined` to use the schema libraries' again.
  */
 export function setDefaultCatalogSchemaCompiler(compiler: CatalogSchemaCompiler | undefined): void {
   defaultCompiler = compiler;
@@ -69,15 +72,21 @@ export function setDefaultCatalogSchemaCompiler(compiler: CatalogSchemaCompiler 
 
 /**
  * Returns the compiler `Catalog.fromJson` uses when it is given none: one that
- * compiles with the default compiler at the time it compiles, so that a
- * catalog loaded before a default compiler is set uses it.
- *
- * @param builtIn The compiler to use when no default was set.
+ * compiles with the compiler set with `setDefaultCatalogSchemaCompiler`, else
+ * that of the installed schema libraries, at the time it compiles, so that a
+ * catalog loaded before either is set uses it.
  */
-export function defaultCatalogSchemaCompiler(
-  builtIn: CatalogSchemaCompiler,
-): CatalogSchemaCompiler {
-  const current = () => defaultCompiler ?? builtIn;
+export function defaultCatalogSchemaCompiler(): CatalogSchemaCompiler {
+  const current = () => {
+    const compiler = defaultCompiler ?? schemaLibraryPart(library => library.catalogSchemaCompiler);
+    if (!compiler) {
+      throw new A2uiCatalogError(
+        'No catalog schema compiler: install a schema library, such as @a2ui/schema-zod3, ' +
+          'or set one with setDefaultCatalogSchemaCompiler.',
+      );
+    }
+    return compiler;
+  };
   return {
     component: (definition, context) => current().component(definition, context),
     functionArgs: (argsSchema, context) => current().functionArgs(argsSchema, context),

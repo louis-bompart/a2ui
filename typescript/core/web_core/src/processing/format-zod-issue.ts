@@ -14,7 +14,25 @@
  * limitations under the License.
  */
 
-import {z} from 'zod';
+/**
+ * The fields of a Zod issue that `formatZodIssue` reads. Declared here, so
+ * that formatting the issues of a Zod schema needs no Zod.
+ */
+export interface ZodIssueLike {
+  readonly code: string;
+  readonly path: ReadonlyArray<PropertyKey>;
+  readonly message?: string;
+  /** For `invalid_union`: the errors of each branch. */
+  readonly unionErrors?: ReadonlyArray<{readonly issues: ReadonlyArray<ZodIssueLike>}>;
+  /** For `unrecognized_keys`. */
+  readonly keys?: ReadonlyArray<string>;
+  /** For `invalid_enum_value`. */
+  readonly options?: ReadonlyArray<unknown>;
+  /** For `invalid_type` and `invalid_enum_value`. */
+  readonly received?: unknown;
+  /** For `invalid_type`. */
+  readonly expected?: unknown;
+}
 
 /**
  * Formats a single Zod issue into a human-readable diagnostic message.
@@ -27,35 +45,32 @@ import {z} from 'zod';
  * @param err Zod validation issue to format.
  * @return Human-readable formatted error message.
  */
-export function formatZodIssue(err: z.ZodIssue): string {
+export function formatZodIssue(err: ZodIssueLike): string {
   const path = err.path.join('.') || 'root';
 
   switch (err.code) {
-    case z.ZodIssueCode.invalid_union: {
-      const unionIssues = (err as z.ZodInvalidUnionIssue).unionErrors?.flatMap(uErr => uErr.issues);
+    case 'invalid_union': {
+      const unionIssues = err.unionErrors?.flatMap(uErr => uErr.issues);
       if (unionIssues && unionIssues.length > 0) {
         return unionIssues.map(formatZodIssue).join('; ');
       }
       return `${path}: Invalid union`;
     }
 
-    case z.ZodIssueCode.unrecognized_keys: {
-      const keysStr = (err as z.ZodUnrecognizedKeysIssue).keys.map(k => `'${k}'`).join(', ');
+    case 'unrecognized_keys': {
+      const keysStr = (err.keys ?? []).map(k => `'${k}'`).join(', ');
       return `${path}: Unrecognized key(s) in object: ${keysStr}`;
     }
 
-    case z.ZodIssueCode.invalid_enum_value: {
-      const issue = err as z.ZodInvalidEnumValueIssue;
-      const optionsStr = issue.options.map(o => String(o)).join(' | ');
-      return `${path}: Invalid enum value. Expected ${optionsStr}, received '${String(issue.received)}'`;
+    case 'invalid_enum_value': {
+      const optionsStr = (err.options ?? []).map(o => String(o)).join(' | ');
+      return `${path}: Invalid enum value. Expected ${optionsStr}, received '${String(err.received)}'`;
     }
 
-    case z.ZodIssueCode.invalid_type: {
-      const issue = err as z.ZodInvalidTypeIssue;
-      return `${path}: Expected ${issue.expected}, received ${issue.received}`;
-    }
+    case 'invalid_type':
+      return `${path}: Expected ${String(err.expected)}, received ${String(err.received)}`;
 
-    case z.ZodIssueCode.custom:
+    case 'custom':
       return `${path}: ${err.message}`;
 
     default:

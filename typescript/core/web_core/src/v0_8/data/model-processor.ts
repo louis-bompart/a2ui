@@ -31,7 +31,8 @@ import {
   MessageProcessor,
   ValueMap,
 } from '../types/types.js';
-import {A2uiMessageSchema} from '../schema/server-to-client.js';
+import {formatA2uiSchemaIssue, validateA2uiSchema} from '../../catalog/a2ui_schema.js';
+import {schemaLibraryPart} from '../../catalog/schema_library.js';
 import {A2uiStateError, A2uiValidationError} from '../errors.js';
 import {
   isComponentArrayReference,
@@ -56,6 +57,25 @@ import {
   isResolvedTextField,
   isResolvedVideo,
 } from './guards.js';
+
+/**
+ * Validates a v0.8 message with the v0.8 schema of the installed schema
+ * libraries, if they have one, and returns it as the schema parses it.
+ *
+ * @throws A2uiValidationError If the message is invalid.
+ */
+function parseMessage(rawMessage: ServerToClientMessage): ServerToClientMessage {
+  const schema = schemaLibraryPart(library => library.protocolSchemas)?.['0.8'];
+  if (!schema) return rawMessage;
+  const result = validateA2uiSchema(schema, rawMessage);
+  if (result.issues) {
+    throw new A2uiValidationError(
+      `Invalid v0.8 message: ${result.issues.map(formatA2uiSchemaIssue).join('; ')}`,
+      result.issues,
+    );
+  }
+  return result.value as ServerToClientMessage;
+}
 
 /**
  * Processes and consolidates A2UI v0.8 protocol messages into a structured model of UI surfaces.
@@ -119,7 +139,7 @@ export class A2uiMessageProcessor implements MessageProcessor {
    */
   processMessages(messages: ServerToClientMessage[]): void {
     for (const rawMessage of messages) {
-      const message = A2uiMessageSchema.parse(rawMessage);
+      const message = parseMessage(rawMessage);
 
       if (message.beginRendering) {
         this.handleBeginRendering(message.beginRendering, message.beginRendering.surfaceId);

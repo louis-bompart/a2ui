@@ -21,7 +21,6 @@ import {
   InternalOperation,
   INTERNAL_OPERATION_TYPES,
 } from '../operations.js';
-import {AgentToRendererMessageSchema} from '../../v1_0/schema/agent-to-renderer.js';
 
 /**
  * Protocol version adapter for specification v1.0.
@@ -29,11 +28,14 @@ import {AgentToRendererMessageSchema} from '../../v1_0/schema/agent-to-renderer.
 export class V1Point0Adapter extends BaseVersionAdapter {
   readonly version: ProtocolVersion = 'v1.0';
 
+  protected readonly schemaVersion = '1.0';
+
   /**
-   * @param schema The schema that validates the messages, or `null` to skip
-   *     validating them. Defaults to the built-in Zod 3 schema.
+   * @param schema The schema that validates the messages, `null` to skip
+   *     validating them, or `undefined` (the default) to validate them with
+   *     the v1.0 schema of the installed schema libraries.
    */
-  constructor(schema: A2uiSchema | null = AgentToRendererMessageSchema) {
+  constructor(schema?: A2uiSchema | null) {
     super(schema);
   }
 

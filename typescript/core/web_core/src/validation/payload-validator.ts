@@ -14,15 +14,18 @@
  * limitations under the License.
  */
 
-import {formatA2uiSchemaIssue, validateA2uiSchema} from '../catalog/a2ui_schema.js';
+import {
+  formatA2uiSchemaIssue,
+  validateA2uiSchema,
+  type A2uiSchema,
+} from '../catalog/a2ui_schema.js';
+import {schemaLibraryPart} from '../catalog/schema_library.js';
 import {CatalogInterface} from '../catalog/types.js';
 import {isAtLeastVersion} from '../common/semver.js';
 import {isValidUax31Identifier} from '../common/uax31.js';
 import {A2uiValidationError} from '../errors.js';
-import {formatZodIssue} from '../processing/format-zod-issue.js';
 import {getKnownSchemaKeys} from '../resolution/data-context.js';
-import {AccessibilityAttributesSchema, ComponentCommonSchema} from '../types/common-types.js';
-import {MAX_FUNCTION_CALL_ARGS} from '../types/helpers.js';
+import {MAX_FUNCTION_CALL_ARGS} from '../types/limits.js';
 import {IndexApi} from '../v1_0/functions/system_functions.js';
 import type {ValidationConfig} from './integrity-checker.js';
 import {validateReservedDirectives} from '../resolution/data-context.js';
@@ -240,31 +243,29 @@ export class PayloadValidator {
     id: string,
     componentCatalogId: string | undefined,
   ): void {
+    const envelopeSchemas = schemaLibraryPart(library => library.envelopeSchemas);
+    const validateField = (schema: A2uiSchema | undefined, value: unknown): void => {
+      const result = schema ? validateA2uiSchema(schema, value) : undefined;
+      if (result?.issues) {
+        const formattedErrors = result.issues.map(formatA2uiSchemaIssue).join(', ');
+        throw new A2uiValidationError(
+          `Validation failed for component '${componentType}' (${id}): ${formattedErrors}`,
+          result.issues,
+        );
+      }
+    };
+
     if ('accessibility' in properties && !knownKeys?.has('accessibility')) {
       const accVal = properties['accessibility'];
       delete properties['accessibility'];
-      const accResult = AccessibilityAttributesSchema.optional().safeParse(accVal);
-      if (!accResult.success) {
-        const formattedErrors = accResult.error.errors.map(formatZodIssue).join(', ');
-        throw new A2uiValidationError(
-          `Validation failed for component '${componentType}' (${id}): ${formattedErrors}`,
-          accResult.error.issues,
-        );
-      }
+      validateField(envelopeSchemas?.accessibility, accVal);
       this.validateNestedFunctions(accVal, componentCatalogId);
     }
 
     if ('metadata' in properties && !knownKeys?.has('metadata')) {
       const metaVal = properties['metadata'];
       delete properties['metadata'];
-      const metaResult = ComponentCommonSchema.shape.metadata.safeParse(metaVal);
-      if (!metaResult.success) {
-        const formattedErrors = metaResult.error.errors.map(formatZodIssue).join(', ');
-        throw new A2uiValidationError(
-          `Validation failed for component '${componentType}' (${id}): ${formattedErrors}`,
-          metaResult.error.issues,
-        );
-      }
+      validateField(envelopeSchemas?.metadata, metaVal);
     }
   }
 

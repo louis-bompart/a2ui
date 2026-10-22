@@ -18,7 +18,7 @@ import type {StandardJSONSchemaV1, StandardSchemaV1} from '@standard-schema/spec
 import type {z} from 'zod';
 
 import {A2uiCatalogError} from '../errors.js';
-import {formatZodIssue} from '../processing/format-zod-issue.js';
+import {formatZodIssue, type ZodIssueLike} from '../processing/format-zod-issue.js';
 
 export type {StandardJSONSchemaV1, StandardSchemaV1};
 
@@ -67,6 +67,30 @@ export function validateA2uiSchema<Output>(
 }
 
 /**
+ * Returns a schema that validates with `validate` and whose JSON Schema is
+ * `jsonSchema`, for a schema written without a schema library.
+ *
+ * @param jsonSchema The schema's JSON Schema, in the form `a2uiJsonSchemaOf`
+ *     returns: A2UI types are `$ref`s to their definitions.
+ * @param validate Validates a value, returning it, possibly coerced, or the
+ *     issues it has.
+ */
+export function defineA2uiSchema<Output>(
+  jsonSchema: Record<string, unknown>,
+  validate: (value: unknown) => A2uiSchemaResult<Output>,
+): A2uiSchema<Output> & StandardJSONSchemaV1<unknown, Output> {
+  const output = () => structuredClone(jsonSchema);
+  return {
+    '~standard': {
+      version: 1,
+      vendor: 'a2ui',
+      validate,
+      jsonSchema: {input: output, output},
+    },
+  };
+}
+
+/**
  * Formats a validation issue as `<path>: <message>`, with `root` for an
  * issue without a path.
  *
@@ -82,7 +106,7 @@ export function formatA2uiSchemaIssue(issue: StandardSchemaV1.Issue): string {
   return `${path.join('.') || 'root'}: ${issue.message}`;
 }
 
-function isZodIssue(issue: StandardSchemaV1.Issue): issue is z.ZodIssue {
+function isZodIssue(issue: StandardSchemaV1.Issue): issue is StandardSchemaV1.Issue & ZodIssueLike {
   return typeof (issue as {code?: unknown}).code === 'string' && Array.isArray(issue.path);
 }
 
@@ -118,15 +142,25 @@ function resolvedSchema(schema: A2uiSchema): A2uiSchema {
  */
 export function zodSchemaOf(model: A2uiSchema): z.ZodTypeAny {
   const schema = resolvedSchema(model);
-  // Checked through the vendor name, a string that survives property renaming
-  // by minifiers such as Closure Compiler. Zod 4 schemas, which have the same
-  // vendor name, are told apart by their `_zod` internals.
-  const isZod3 =
-    schema['~standard']?.vendor === 'zod' && (schema as {_zod?: unknown})._zod === undefined;
-  if (!isZod3) {
+  if (!isZod3Schema(schema)) {
     throw new A2uiCatalogError(
       `Schema from '${schema['~standard']?.vendor}' is not supported yet: only Zod 3 schemas are.`,
     );
   }
   return schema as unknown as z.ZodTypeAny;
+}
+
+/**
+ * Whether a schema is a Zod 3 schema, or a deferred schema that compiles to
+ * one.
+ *
+ * Checked through the vendor name, a string that survives property renaming
+ * by minifiers such as Closure Compiler. Zod 4 schemas, which have the same
+ * vendor name, are told apart by their `_zod` internals.
+ *
+ * @internal
+ */
+export function isZod3Schema(model: A2uiSchema): boolean {
+  const schema = resolvedSchema(model);
+  return schema['~standard']?.vendor === 'zod' && (schema as {_zod?: unknown})._zod === undefined;
 }

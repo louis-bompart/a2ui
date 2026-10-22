@@ -26,14 +26,9 @@ import {
 } from '../catalog/a2ui_json_schema.js';
 import type {A2uiSchema} from '../catalog/a2ui_schema.js';
 import type {JsonSchemaObject} from '../catalog/spec_annotations.js';
+import {V10_STANDARD_DEFS} from '../v1_0/standard_defs.js';
 import {ComponentContext} from './component-context.js';
-import {
-  AccessibilityAttributesSchema,
-  Action,
-  ChildList,
-  DataBinding,
-  FunctionCall,
-} from '../types/common-types.js';
+import type {Action, ChildList, DataBinding, FunctionCall} from '../types/common-types.js';
 import type {Action as V1Action} from '../v1_0/schema/common-types.js';
 import {MAX_DYNAMIC_VALUE_DEPTH} from './data-context.js';
 import {isAtLeastVersion} from '../common/semver.js';
@@ -92,7 +87,9 @@ export function scrapeSchemaBehavior(schema: A2uiSchema): BehaviorNode {
           ...behavior,
           shape: {
             ...behavior.shape,
-            accessibility: getFieldBehavior(a2uiJsonSchemaOf(AccessibilityAttributesSchema)),
+            accessibility: getFieldBehavior(
+              V10_STANDARD_DEFS['AccessibilityAttributes'] as JsonSchemaObject,
+            ),
           },
         }
       : behavior;

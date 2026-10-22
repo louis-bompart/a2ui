@@ -17,7 +17,6 @@
 import type {A2uiSchema} from '../../catalog/a2ui_schema.js';
 import {BaseVersionAdapter, ProtocolVersion} from './base.js';
 import {InternalComponentPayload, InternalOperation} from '../operations.js';
-import {A2uiMessageSchema} from '../../v0_9/schema/server-to-client.js';
 
 /**
  * Protocol version adapter for specification v0.9 and v0.9.1.
@@ -25,11 +24,14 @@ import {A2uiMessageSchema} from '../../v0_9/schema/server-to-client.js';
 export class V0Point9Adapter extends BaseVersionAdapter {
   readonly version: ProtocolVersion = 'v0.9';
 
+  protected readonly schemaVersion = '0.9';
+
   /**
-   * @param schema The schema that validates the messages, or `null` to skip
-   *     validating them. Defaults to the built-in Zod 3 schema.
+   * @param schema The schema that validates the messages, `null` to skip
+   *     validating them, or `undefined` (the default) to validate them with
+   *     the v0.9 schema of the installed schema libraries.
    */
-  constructor(schema: A2uiSchema | null = A2uiMessageSchema) {
+  constructor(schema?: A2uiSchema | null) {
     super(schema);
   }
 

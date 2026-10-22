@@ -18,6 +18,7 @@
  */
 
 export {
+  defineA2uiSchema,
   formatA2uiSchemaIssue,
   isA2uiSchema,
   validateA2uiSchema,
@@ -33,6 +34,15 @@ export {
   type CatalogSchemaContext,
 } from './schema_compiler.js';
 export type {PeerCatalogSource} from './schema_loader.js';
+export {
+  installSchemaLibrary,
+  uninstallSchemaLibrary,
+  type CatalogDocumentContext,
+  type CatalogDocumentShaper,
+  type EnvelopeSchemas,
+  type ProtocolSchemas,
+  type SchemaLibrary,
+} from './schema_library.js';
 export * from './types.js';
 export * from './function_invoker.js';
 export {JsonComponentApi, JsonFunctionApi} from './json_entries.js';

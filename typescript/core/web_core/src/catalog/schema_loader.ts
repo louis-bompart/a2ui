@@ -17,7 +17,8 @@
 import {isAtLeastVersion} from '../common/semver.js';
 import {assertUax31Identifier} from '../common/uax31.js';
 import {A2uiCatalogError} from '../errors.js';
-import {CommonSchemas} from '../types/common-types.js';
+import {V09_STANDARD_DEFS} from '../v0_9/standard_defs.js';
+import {V10_STANDARD_DEFS} from '../v1_0/standard_defs.js';
 import type {A2uiSchema} from './a2ui_schema.js';
 import {
   DeferredSchema,
@@ -64,6 +65,12 @@ export type PeerCatalogSource =
   | Readonly<Record<string, unknown>>;
 
 const COMMON_TYPES_DOCUMENT = 'common_types.json';
+
+/** Names of the common types of every protocol version with common types. */
+const COMMON_TYPE_NAMES: ReadonlySet<string> = new Set([
+  ...Object.keys(V09_STANDARD_DEFS),
+  ...Object.keys(V10_STANDARD_DEFS),
+]);
 const CATALOG_DOCUMENT = 'catalog.json';
 
 /** Whether `doc` is the document `name`, bare or as the last segment of a path. */
@@ -427,7 +434,7 @@ function inlineRefs(
     if (target && !target.isPeer) {
       const defName = target.pointer.split('/').pop() ?? '';
       const isPreservedCommonType =
-        target.pointer.startsWith('#/$defs/') && Object.hasOwn(CommonSchemas, defName);
+        target.pointer.startsWith('#/$defs/') && COMMON_TYPE_NAMES.has(defName);
       if (isPreservedCommonType || (!inlineLocalDefs && target.pointer.startsWith('#/$defs/'))) {
         target = undefined;
       }

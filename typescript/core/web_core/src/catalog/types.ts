@@ -35,7 +35,6 @@ import {
 } from './schema_loader.js';
 import {defaultCatalogSchemaCompiler, type CatalogSchemaCompiler} from './schema_compiler.js';
 import type {JsonSchemaObject} from './spec_annotations.js';
-import {zod3CatalogSchemaCompiler} from './zod3_catalog_compiler.js';
 import {generateValidationSchema} from './schema_generator.js';
 import {
   deepCopyJson,
@@ -845,7 +844,8 @@ export class Catalog<
    *   in `toJson`.
    * @param loadOptions `schemaCompiler`: compiles the entries' definitions into
    *   their schemas. Defaults to the compiler set with
-   *   `setDefaultCatalogSchemaCompiler`, else the built-in Zod 3 compiler.
+   *   `setDefaultCatalogSchemaCompiler`, else that of the installed schema
+   *   libraries.
    * @returns A new Catalog populated with component and function schemas.
    * @throws {Error} If the catalog ID is missing or not a string.
    */
@@ -865,7 +865,7 @@ export class Catalog<
       json,
       protocolVersion,
       catalogId,
-      loadOptions.schemaCompiler ?? defaultCatalogSchemaCompiler(zod3CatalogSchemaCompiler),
+      loadOptions.schemaCompiler ?? defaultCatalogSchemaCompiler(),
     );
     return new Catalog(id, resolvedVersion, components, functions, options);
   }

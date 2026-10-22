@@ -16,9 +16,9 @@
  */
 
 import {isAtLeastVersion, toCanonicalVersion} from '../common/semver.js';
-import {CommonSchemas} from '../types/common-types.js';
 import {a2uiJsonSchemaOf, copyA2uiJsonSchemaOf} from './a2ui_json_schema.js';
 import {isA2uiSchema} from './a2ui_schema.js';
+import {schemaLibraries} from './schema_library.js';
 import {
   catalogDocumentModel,
   deepCopyJson,
@@ -26,7 +26,7 @@ import {
   type CatalogDocumentModel,
 } from './schema_serializer.js';
 import {inlinePeerAndLocalRefs} from './schema_loader.js';
-import {standardDefsForVersion} from './spec_shape.js';
+import {standardDefsForVersion} from './standard_defs.js';
 import type {CatalogInterface, ComponentApi, FunctionApi} from './types.js';
 
 /**
@@ -875,24 +875,17 @@ function processFunctions(
 }
 
 /**
- * Descriptions the shared Zod mirrors of the common types carry on their
- * `REF:` markers, by definition name.
- *
- * The mirrors are shared by every protocol version, so their text is one
- * version's. A reference that carries exactly this text did not get it from
- * its author.
+ * Returns the description a schema library's own schema of the common type
+ * `name` carries on the references it converts to. A reference that carries
+ * exactly this text did not get it from its author.
  */
-const MIRROR_REF_DESCRIPTIONS: ReadonlyMap<string, string> = new Map(
-  Object.values(CommonSchemas).flatMap(mirror => {
-    const description = (mirror as {description?: unknown}).description;
-    if (typeof description !== 'string' || !description.startsWith('REF:')) return [];
-    const content = description.substring(4);
-    const pipeIndex = content.indexOf('|');
-    if (pipeIndex === -1) return [];
-    const name = content.substring(0, pipeIndex).split('/').pop()!;
-    return [[name, content.substring(pipeIndex + 1)] as [string, string]];
-  }),
-);
+function libraryRefDescription(name: string): string | undefined {
+  for (const library of schemaLibraries()) {
+    const description = library.commonTypeDescriptions?.get(name);
+    if (description !== undefined) return description;
+  }
+  return undefined;
+}
 
 /**
  * Rewrites every reference to a definition of another document, such as
@@ -950,7 +943,7 @@ function describeStandardRefs(
       ? undefined
       : (standardDefs[name] as JsonObject | undefined);
     const inherited =
-      obj['description'] === undefined || obj['description'] === MIRROR_REF_DESCRIPTIONS.get(name);
+      obj['description'] === undefined || obj['description'] === libraryRefDescription(name);
     if (definition && inherited) {
       if (typeof definition['description'] === 'string') {
         obj['description'] = definition['description'];
