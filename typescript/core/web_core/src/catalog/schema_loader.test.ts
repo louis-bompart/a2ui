@@ -25,7 +25,7 @@ import {V10_CHILD_REF_OPTIONS} from '../v1_0/standard_defs.js';
 import {STRICT_VALIDATION} from '../validation/integrity-checker.js';
 import {PayloadValidator} from '../validation/payload-validator.js';
 import {A2uiCatalogError} from '../errors.js';
-import {zodSchemaOf} from './a2ui_schema.js';
+import {validateA2uiSchema, zodSchemaOf} from './a2ui_schema.js';
 
 describe('Catalog.fromJson & schema_loader', () => {
   const basicCatalogPath = resolve(
@@ -47,31 +47,31 @@ describe('Catalog.fromJson & schema_loader', () => {
     const textComp = catalog.components.get('Text');
     assert.ok(textComp);
     assert.strictEqual(textComp.name, 'Text');
-    assert.ok(textComp.schema instanceof z.ZodObject);
+    assert.ok(zodSchemaOf(textComp.schema) instanceof z.ZodObject);
 
     // Verify envelope fields ('component', 'id') are omitted
-    const textShape = (textComp.schema as z.ZodObject<any>).shape;
+    const textShape = (zodSchemaOf(textComp.schema) as z.ZodObject<any>).shape;
     assert.strictEqual(textShape.id, undefined);
     assert.strictEqual(textShape.component, undefined);
 
     // Verify text property exists and validates strings & data bindings
     assert.ok(textShape.text);
-    const validText = textComp.schema.safeParse({text: 'Hello World'});
+    const validText = zodSchemaOf(textComp.schema).safeParse({text: 'Hello World'});
     assert.strictEqual(validText.success, true);
 
-    const validBinding = textComp.schema.safeParse({
+    const validBinding = zodSchemaOf(textComp.schema).safeParse({
       text: {path: '/user/name'},
     });
     assert.strictEqual(validBinding.success, true);
 
     // Verify weight is dynamically resolved from #/$defs/CatalogComponentCommon
     assert.ok(textShape.weight);
-    const validWeight = textComp.schema.safeParse({text: 'Hello', weight: 2});
+    const validWeight = zodSchemaOf(textComp.schema).safeParse({text: 'Hello', weight: 2});
     assert.strictEqual(validWeight.success, true);
 
     // Verify accessibility is dynamically resolved from common_types.json#/$defs/ComponentCommon
     assert.ok(textShape.accessibility);
-    const validAccessibility = textComp.schema.safeParse({
+    const validAccessibility = zodSchemaOf(textComp.schema).safeParse({
       text: 'Hello',
       accessibility: {label: 'Heading text'},
     });
@@ -80,7 +80,7 @@ describe('Catalog.fromJson & schema_loader', () => {
     // Row component with ChildList
     const rowComp = catalog.components.get('Row');
     assert.ok(rowComp);
-    const rowShape = (rowComp.schema as z.ZodObject<any>).shape;
+    const rowShape = (zodSchemaOf(rowComp.schema) as z.ZodObject<any>).shape;
     assert.ok(rowShape.children);
 
     const validChildren = zodSchemaOf(rowComp.schema).safeParse({
@@ -91,7 +91,7 @@ describe('Catalog.fromJson & schema_loader', () => {
     // Button component with Action
     const btnComp = catalog.components.get('Button');
     assert.ok(btnComp);
-    const btnShape = (btnComp.schema as z.ZodObject<any>).shape;
+    const btnShape = (zodSchemaOf(btnComp.schema) as z.ZodObject<any>).shape;
     assert.ok(btnShape.action);
 
     const validAction = zodSchemaOf(btnComp.schema).safeParse({
@@ -117,7 +117,7 @@ describe('Catalog.fromJson & schema_loader', () => {
     ]) {
       const comp = catalog.components.get(name);
       assert.ok(comp, `${name} is missing from the basic catalog`);
-      const shape = (comp.schema as z.ZodObject<any>).shape;
+      const shape = (zodSchemaOf(comp.schema) as z.ZodObject<any>).shape;
       assert.ok(shape.checks, `${name} lost its checks property`);
     }
 
@@ -157,7 +157,7 @@ describe('Catalog.fromJson & schema_loader', () => {
 
     const input = catalog.components.get('Input');
     assert.ok(input);
-    const shape = (input.schema as z.ZodObject<any>).shape;
+    const shape = (zodSchemaOf(input.schema) as z.ZodObject<any>).shape;
     assert.ok(shape.checks);
     assert.ok(shape.label);
   });
@@ -182,7 +182,7 @@ describe('Catalog.fromJson & schema_loader', () => {
       const component = catalog.components.get(componentName);
       assert.ok(component, `${componentName} is missing from the v1.0 basic catalog`);
 
-      const shape = (component.schema as z.ZodObject<any>).shape;
+      const shape = (zodSchemaOf(component.schema) as z.ZodObject<any>).shape;
       const prop = shape[propName];
       assert.ok(prop, `${componentName}.${propName} is missing`);
 
@@ -218,7 +218,7 @@ describe('Catalog.fromJson & schema_loader', () => {
     assert.ok(widget);
     // An unresolvable cross-catalog reference is a catalog error, never silently dropped.
     assert.throws(
-      () => widget.schema,
+      () => validateA2uiSchema(widget.schema, {}),
       (err: Error) =>
         err instanceof A2uiCatalogError &&
         err.message.includes("'other_document.json#/$defs/NotAProtocolType'"),
@@ -250,7 +250,7 @@ describe('Catalog.fromJson & schema_loader', () => {
     const btn = catalog.components.get('CustomButton');
     assert.ok(btn);
 
-    const shape = (btn.schema as z.ZodObject<any>).shape;
+    const shape = (zodSchemaOf(btn.schema) as z.ZodObject<any>).shape;
     // Protocol accessibility is present
     assert.ok(shape.accessibility);
     assert.ok(shape.label);
@@ -459,12 +459,12 @@ describe('Catalog.fromJson & schema_loader', () => {
       },
       '0.9',
     );
-    const args = catalog.functions.get('required')!.schema;
+    const args = zodSchemaOf(catalog.functions.get('required')!.schema);
     assert.strictEqual(zodSchemaOf(args).safeParse({value: null}).success, true);
     assert.strictEqual(zodSchemaOf(args).safeParse({value: {nested: 1}}).success, true);
     assert.strictEqual(zodSchemaOf(args).safeParse({}).success, false);
 
-    const holder = catalog.components.get('Holder')!.schema;
+    const holder = zodSchemaOf(catalog.components.get('Holder')!.schema);
     assert.strictEqual(zodSchemaOf(holder).safeParse({payload: 0}).success, true);
     assert.strictEqual(zodSchemaOf(holder).safeParse({}).success, false);
   });
@@ -561,7 +561,7 @@ describe('Catalog.fromJson & schema_loader', () => {
 
     // The item schema is structural rather than an opaque record, but still
     // tolerates keys the catalog did not declare.
-    const schema = catalog.components.get('Tabs')!.schema;
+    const schema = zodSchemaOf(catalog.components.get('Tabs')!.schema);
     assert.ok(
       zodSchemaOf(schema).safeParse({tabs: [{title: 'Overview', child: 'c1', extra: 1}]}).success,
     );
@@ -600,8 +600,9 @@ describe('Catalog.fromJson & schema_loader', () => {
   };
 
   it('lets a component override a property its mixins and local definitions declare', () => {
-    const schema = Catalog.fromJson(precedenceCatalog).components.get('Toggle')!
-      .schema as z.ZodObject<z.ZodRawShape>;
+    const schema = zodSchemaOf(
+      Catalog.fromJson(precedenceCatalog).components.get('Toggle')!.schema,
+    ) as z.ZodObject<z.ZodRawShape>;
     assert.ok(schema.safeParse({checks: 'strict', label: 3, size: 2}).success);
     assert.ok(!schema.safeParse({checks: [{condition: true, message: 'x'}]}).success);
     assert.ok(!schema.safeParse({label: 'text'}).success, 'inline beats the local definition');
@@ -627,7 +628,9 @@ describe('Catalog.fromJson & schema_loader', () => {
 
   it('treats catalogId as a component envelope field', () => {
     const catalog = Catalog.fromJson(precedenceCatalog);
-    const schema = catalog.components.get('Toggle')!.schema as z.ZodObject<z.ZodRawShape>;
+    const schema = zodSchemaOf(
+      catalog.components.get('Toggle')!.schema,
+    ) as z.ZodObject<z.ZodRawShape>;
     assert.ok(!('catalogId' in schema.shape));
     assert.ok('metadata' in schema.shape);
     new PayloadValidator(catalog, STRICT_VALIDATION).validateComponent({

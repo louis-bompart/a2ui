@@ -22,7 +22,7 @@ import * as url from 'node:url';
 
 import {A2uiCatalogError} from '../errors.js';
 import {MessageProcessor} from '../processing/message-processor.js';
-import {zodSchemaOf} from './a2ui_schema.js';
+import {validateA2uiSchema, zodSchemaOf} from './a2ui_schema.js';
 import {PayloadValidator} from '../validation/payload-validator.js';
 import {Catalog, CatalogApi, ComponentApi, linkCatalogs} from './types.js';
 
@@ -105,7 +105,7 @@ describe('withPeerCatalogs', () => {
     const cachedBefore = cachedValidationSchema(catalog);
     const derivedBefore = catalog.components.get('Derived')!;
     // Unlinked, the reference to the peer cannot be resolved.
-    assert.throws(() => derivedBefore.schema, A2uiCatalogError);
+    assert.throws(() => validateA2uiSchema(derivedBefore.schema, {}), A2uiCatalogError);
 
     const linked = catalog.withPeerCatalogs([peer]);
 
@@ -121,7 +121,7 @@ describe('withPeerCatalogs', () => {
     assert.strictEqual(cachedValidationSchema(catalog), cachedBefore);
     assert.deepStrictEqual(catalog.validationSchema, schemaBefore);
     assert.strictEqual(catalog.components.get('Derived'), derivedBefore);
-    assert.throws(() => derivedBefore.schema, A2uiCatalogError);
+    assert.throws(() => validateA2uiSchema(derivedBefore.schema, {}), A2uiCatalogError);
   });
 
   it('keeps the runtime class of a subclass', () => {
@@ -312,7 +312,7 @@ describe('MessageProcessor', () => {
     assert.strictEqual(cachedValidationSchema(shared), sharedCached);
     assert.strictEqual(shared.components.get('Text')!.schema, textSchema);
     assert.strictEqual(crossRef.components.get('CustomText'), customText);
-    assert.throws(() => customText.schema, A2uiCatalogError);
+    assert.throws(() => validateA2uiSchema(customText.schema, {}), A2uiCatalogError);
   });
 });
 
@@ -346,13 +346,16 @@ describe('unresolvable cross-catalog references', () => {
     const catalog = Catalog.fromJson(doc).withPeerCatalogs([Catalog.fromJson(PEER)]);
     for (const name of ['Inherits', 'Property', 'MissingPointer']) {
       assert.throws(
-        () => catalog.components.get(name)!.schema,
+        () => validateA2uiSchema(catalog.components.get(name)!.schema, {}),
         (err: Error) =>
           err instanceof A2uiCatalogError && err.message.includes('Unresolvable schema reference'),
         name,
       );
     }
-    assert.throws(() => catalog.functions.get('fn')!.schema, A2uiCatalogError);
+    assert.throws(
+      () => validateA2uiSchema(catalog.functions.get('fn')!.schema, {}),
+      A2uiCatalogError,
+    );
     const validator = new PayloadValidator(catalog);
     assert.throws(() =>
       validator.validateComponent({id: 'p', component: 'Property', icon: 'star'}),

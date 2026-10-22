@@ -87,6 +87,26 @@ function isZodIssue(issue: StandardSchemaV1.Issue): issue is z.ZodIssue {
 }
 
 /**
+ * A schema compiled on first use, such as the schema of an entry
+ * `Catalog.fromJson` loaded.
+ *
+ * @internal
+ */
+export interface DeferredA2uiSchema extends A2uiSchema {
+  /** Compiles the schema, once, and returns it. */
+  resolveDeferredSchema(): A2uiSchema;
+}
+
+/** Returns the schema a deferred schema compiles to, or `schema` itself. */
+function resolvedSchema(schema: A2uiSchema): A2uiSchema {
+  let current = schema;
+  while (typeof (current as Partial<DeferredA2uiSchema>).resolveDeferredSchema === 'function') {
+    current = (current as DeferredA2uiSchema).resolveDeferredSchema();
+  }
+  return current;
+}
+
+/**
  * Returns the Zod 3 schema behind an `A2uiSchema`.
  *
  * Parts of web_core still read the structure of Zod 3 schemas to serialize
@@ -96,7 +116,8 @@ function isZodIssue(issue: StandardSchemaV1.Issue): issue is z.ZodIssue {
  * @internal
  * @throws A2uiCatalogError when the schema is not a Zod 3 schema.
  */
-export function zodSchemaOf(schema: A2uiSchema): z.ZodTypeAny {
+export function zodSchemaOf(model: A2uiSchema): z.ZodTypeAny {
+  const schema = resolvedSchema(model);
   // Checked through the vendor name, a string that survives property renaming
   // by minifiers such as Closure Compiler. Zod 4 schemas, which have the same
   // vendor name, are told apart by their `_zod` internals.

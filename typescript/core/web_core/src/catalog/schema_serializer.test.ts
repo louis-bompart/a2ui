@@ -671,8 +671,8 @@ describe('Catalog.fromJson', () => {
   it('derives the Zod schema of a loaded entry from its definition once, on first use', () => {
     const catalog = Catalog.fromJson(readRepoJson('catalogs/basic/v1/catalog.json'));
     const text = catalog.components.get('Text')!;
-    const schema = text.schema;
-    assert.strictEqual(text.schema, schema, 'the derived schema is cached');
+    const schema = zodSchemaOf(text.schema);
+    assert.strictEqual(zodSchemaOf(text.schema), schema, 'the derived schema is cached');
     assert.ok(zodSchemaOf(schema).safeParse({text: 'hi'}).success);
     assert.ok(!zodSchemaOf(schema).safeParse({text: 'hi', unknown: 1}).success);
     assert.ok(!Object.keys(text).includes('jsonSchema'), 'the definition is not an own property');
@@ -842,7 +842,8 @@ describe('composite catalogs', () => {
         );
 
         const reloaded = Catalog.fromJson(doc, version);
-        const shape = (reloaded.components.get('Text')!.schema as z.AnyZodObject).shape;
+        const shape = (zodSchemaOf(reloaded.components.get('Text')!.schema) as z.AnyZodObject)
+          .shape;
         assert.ok('weight' in shape, 'fromJson(toJson()) keeps weight');
         assert.ok(
           zodSchemaOf(reloaded.components.get('Text')!.schema).safeParse({text: 'hi', weight: 1})

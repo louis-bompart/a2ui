@@ -14,25 +14,67 @@
  * limitations under the License.
  */
 
-import type {A2uiSchema} from './a2ui_schema.js';
+import {a2uiJsonSchemaOf} from './a2ui_json_schema.js';
+import type {
+  A2uiSchema,
+  A2uiSchemaResult,
+  DeferredA2uiSchema,
+  StandardJSONSchemaV1,
+  StandardSchemaV1,
+} from './a2ui_schema.js';
 import type {JsonSchemaObject} from './spec_annotations.js';
 
 /**
  * The JSON Schema definitions of the entries `Catalog.fromJson` loaded, by
- * entry. Kept out of the entries' own properties, so that a copy of an entry
- * made with object spread, which may change its `schema`, does not carry a
- * definition that no longer describes it.
+ * entry and by the schema each entry's definition compiles to. Kept out of
+ * the entries' own properties, so that a copy of an entry made with object
+ * spread keeps the definition only while it keeps the entry's `schema`: a
+ * copy that changes its `schema` does not carry a definition that no longer
+ * describes it.
  */
 const definitions = new WeakMap<object, JsonSchemaObject>();
 
 /**
  * Returns the JSON Schema definition of a catalog entry that
- * `Catalog.fromJson` loaded, or `undefined` for an entry defined in code.
+ * `Catalog.fromJson` loaded, or of a copy of one with the same `schema`, or
+ * `undefined` for an entry defined in code.
  *
  * @param entry A component or function.
  */
 export function loadedDefinition(entry: object): JsonSchemaObject | undefined {
-  return definitions.get(entry);
+  const own = definitions.get(entry);
+  if (own) return own;
+  const schema = (entry as {schema?: unknown}).schema;
+  return typeof schema === 'object' && schema !== null ? definitions.get(schema) : undefined;
+}
+
+/**
+ * A schema compiled from a definition on first use: by the first validation,
+ * or the first read of its vendor or JSON Schema. Creating one, or copying the
+ * entry holding it, compiles nothing, so a catalog can be loaded before the
+ * compiler it uses by default is set.
+ */
+export class DeferredSchema implements DeferredA2uiSchema, StandardJSONSchemaV1 {
+  readonly '~standard': StandardSchemaV1.Props & StandardJSONSchemaV1.Props;
+  private compiled?: A2uiSchema;
+
+  constructor(private readonly compile: () => A2uiSchema) {
+    const resolve = () => this.resolveDeferredSchema();
+    const output = () => ({...a2uiJsonSchemaOf(resolve())});
+    this['~standard'] = {
+      version: 1,
+      get vendor() {
+        return resolve()['~standard'].vendor;
+      },
+      validate: (value: unknown) =>
+        resolve()['~standard'].validate(value) as A2uiSchemaResult<unknown>,
+      jsonSchema: {input: output, output},
+    };
+  }
+
+  resolveDeferredSchema(): A2uiSchema {
+    return (this.compiled ??= this.compile());
+  }
 }
 
 /**
@@ -71,19 +113,20 @@ function stringList(value: unknown): string[] | undefined {
  *
  * Its model is its JSON Schema definition as the document writes it
  * (`jsonSchema`), deeply frozen. Every other field is a view of it: the
- * `schema` is derived from it on first use and cached, and `allowedParents`
- * and `allowedChildren` are read from it. `Catalog.toJson` writes the
- * definition, so a loaded catalog serializes as written.
+ * `schema` is compiled from it on first use, and `allowedParents` and
+ * `allowedChildren` are read from it. `Catalog.toJson` writes the definition,
+ * so a loaded catalog serializes as written.
  *
- * A copy made with object spread is an ordinary component defined in code: it
- * keeps the views' values but not the definition, and is serialized from its
- * `schema`.
+ * A copy made with object spread keeps the definition while it keeps the
+ * `schema`, as a web component implementation of the component does. A copy
+ * with another `schema` is an ordinary component defined in code, serialized
+ * from its `schema`.
  */
 export class JsonComponentApi {
   /** Name of the component as it appears in A2UI JSON. */
   readonly name: string;
-  /** Schema of the component's properties, compiled from `jsonSchema`. */
-  declare readonly schema: A2uiSchema;
+  /** Schema of the component's properties, compiled from `jsonSchema` on first use. */
+  readonly schema: A2uiSchema;
   /** Allowed parent component types, as the definition declares them. */
   declare readonly allowedParents?: string[];
   /** Allowed child component types, as the definition declares them. */
@@ -100,9 +143,10 @@ export class JsonComponentApi {
     deriveSchema: (jsonSchema: JsonSchemaObject) => A2uiSchema,
   ) {
     this.name = name;
+    this.schema = new DeferredSchema(() => deriveSchema(jsonSchema));
     definitions.set(this, jsonSchema);
+    definitions.set(this.schema, jsonSchema);
     defineViews(this, {
-      schema: () => deriveSchema(jsonSchema),
       allowedParents: () => stringList(jsonSchema['allowedParents']),
       allowedChildren: () => stringList(jsonSchema['allowedChildren']),
     });
@@ -122,18 +166,18 @@ export class JsonComponentApi {
  * (`jsonSchema`): an entry of a `functions` map (the schema of a call to the
  * function) or an item of a `functions` list (with its `name` and
  * `parameters`), deeply frozen. Every other field is a view of it: the
- * `schema` of its arguments is derived from it on first use and cached, and
+ * `schema` of its arguments is compiled from it on first use, and
  * `returnType`, `description`, `allowedCallers` and `requiresUserActivation`
  * are read from it.
  *
- * A copy made with object spread is an ordinary function defined in code: it
- * keeps the views' values but not the definition.
+ * A copy made with object spread, or a `FunctionImplementation` made from
+ * it, keeps the definition while it keeps the `schema`.
  */
 export class JsonFunctionApi {
   /** Name of the function as it appears in A2UI JSON payloads. */
   readonly name: string;
-  /** Schema of the function's arguments, compiled from `jsonSchema`. */
-  declare readonly schema: A2uiSchema;
+  /** Schema of the function's arguments, compiled from `jsonSchema` on first use. */
+  readonly schema: A2uiSchema;
   /** Return type identifier, as the definition declares it, or `'any'`. */
   declare readonly returnType: string;
   /** The definition's description. */
@@ -155,7 +199,9 @@ export class JsonFunctionApi {
     deriveSchema: (jsonSchema: JsonSchemaObject) => A2uiSchema,
   ) {
     this.name = name;
+    this.schema = new DeferredSchema(() => deriveSchema(jsonSchema));
     definitions.set(this, jsonSchema);
+    definitions.set(this.schema, jsonSchema);
     // A map entry may write the call metadata as constant properties of the
     // call schema, before v1.0 lifted it to keywords.
     const props = isObject(jsonSchema['properties']) ? jsonSchema['properties'] : undefined;
@@ -164,7 +210,6 @@ export class JsonFunctionApi {
       return isObject(property) ? property['const'] : undefined;
     };
     defineViews(this, {
-      schema: () => deriveSchema(jsonSchema),
       returnType: () => {
         const declared = jsonSchema['returnType'] ?? constant('returnType');
         return typeof declared === 'string' ? declared : 'any';

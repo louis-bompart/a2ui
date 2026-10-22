@@ -19,7 +19,7 @@ import {assertUax31Identifier} from '../common/uax31.js';
 import {A2uiCatalogError} from '../errors.js';
 import {CommonSchemas} from '../types/common-types.js';
 import type {A2uiSchema} from './a2ui_schema.js';
-import {JsonComponentApi, JsonFunctionApi} from './json_entries.js';
+import {DeferredSchema, JsonComponentApi, JsonFunctionApi} from './json_entries.js';
 import type {CatalogSchemaCompiler} from './schema_compiler.js';
 import {
   buildComponentUnion,
@@ -857,11 +857,13 @@ function parseThemeSchema(
       'properties' in rawThemeObj || 'allOf' in rawThemeObj || rawThemeObj.type === 'object'
         ? rawThemeObj
         : {type: 'object', properties: rawThemeObj};
-    return compiler.theme(normalizedThemeSchema, {
-      document: catalogSchema,
-      peers: [],
-      protocolVersion,
-    });
+    return new DeferredSchema(() =>
+      compiler.theme(normalizedThemeSchema, {
+        document: catalogSchema,
+        peers: [],
+        protocolVersion,
+      }),
+    );
   }
   return undefined;
 }

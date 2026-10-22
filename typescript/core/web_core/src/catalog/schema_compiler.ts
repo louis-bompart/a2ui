@@ -68,12 +68,19 @@ export function setDefaultCatalogSchemaCompiler(compiler: CatalogSchemaCompiler 
 }
 
 /**
- * Returns the compiler `Catalog.fromJson` uses when it is given none.
+ * Returns the compiler `Catalog.fromJson` uses when it is given none: one that
+ * compiles with the default compiler at the time it compiles, so that a
+ * catalog loaded before a default compiler is set uses it.
  *
  * @param builtIn The compiler to use when no default was set.
  */
 export function defaultCatalogSchemaCompiler(
   builtIn: CatalogSchemaCompiler,
 ): CatalogSchemaCompiler {
-  return defaultCompiler ?? builtIn;
+  const current = () => defaultCompiler ?? builtIn;
+  return {
+    component: (definition, context) => current().component(definition, context),
+    functionArgs: (argsSchema, context) => current().functionArgs(argsSchema, context),
+    theme: (themeSchema, context) => current().theme(themeSchema, context),
+  };
 }
