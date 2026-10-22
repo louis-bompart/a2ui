@@ -15,18 +15,15 @@
  */
 
 import {html, nothing} from 'lit';
-import type {z} from 'zod';
 import {ComponentApi, type InferredComponentApiSchemaType} from '../../../catalog/types.js';
 import type {ResolveA2uiProps} from '../../../resolution/generic-binder.js';
-import type {AccessibilityAttributesSchema} from '../../../types/common-types.js';
+import type {AccessibilityAttributes} from '../../../types/common-types.js';
 import {A2uiLitElement} from '../../index.js';
 import {injectBasicCatalogStyles, computeColorVariant} from '../styles/default.js';
 import {isValidCssColor} from '../theme.js';
 
 /** Resolved accessibility attributes, as rendered onto the element. */
-type ResolvedAccessibilityAttributes = ResolveA2uiProps<
-  z.infer<typeof AccessibilityAttributesSchema>
->;
+type ResolvedAccessibilityAttributes = ResolveA2uiProps<AccessibilityAttributes>;
 
 /**
  * The resolved props this base class reads. Not every protocol version

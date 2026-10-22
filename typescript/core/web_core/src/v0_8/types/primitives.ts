@@ -14,13 +14,23 @@
  * limitations under the License.
  */
 
-import type {z} from 'zod';
-import type {
-  StringValueSchema,
-  NumberValueSchema,
-  BooleanValueSchema,
-} from '../schema/common-types.js';
+/** A string value: a data binding path or a literal, exactly one of them. */
+export type StringValue = {
+  path?: string;
+  literalString?: string;
+  literal?: string;
+};
 
-export declare interface StringValue extends z.infer<typeof StringValueSchema> {}
-export declare interface NumberValue extends z.infer<typeof NumberValueSchema> {}
-export declare interface BooleanValue extends z.infer<typeof BooleanValueSchema> {}
+/** A number value: a data binding path or a literal, exactly one of them. */
+export type NumberValue = {
+  path?: string;
+  literalNumber?: number;
+  literal?: number;
+};
+
+/** A boolean value: a data binding path or a literal, exactly one of them. */
+export type BooleanValue = {
+  path?: string;
+  literalBoolean?: boolean;
+  literal?: boolean;
+};

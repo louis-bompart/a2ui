@@ -21,6 +21,8 @@ import {
   getHeader,
   analyzeDependencies,
   compileDefToZod,
+  importRecursiveTypes,
+  privatizeTypes,
   writeIndexFile,
 } from '../../../scripts/zod-generator-core.mjs';
 
@@ -28,7 +30,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const v10Dir = join(__dirname, '..');
 const rootDir = join(v10Dir, '..', '..');
 const specDir = join(rootDir, '..', '..', '..', 'specification', 'v1_0', 'json');
-const destDir = join(v10Dir, 'schema');
+const destDir = join(v10Dir, 'schema', 'zod');
 
 const VERSION_TAG = 'v1.0';
 const SCRIPT_SOURCE = 'src/v1_0/scripts/generate-schemas.mjs';
@@ -47,7 +49,7 @@ function generateCommonTypes() {
   let commonTs =
     getHeader(VERSION_TAG, SCRIPT_SOURCE) +
     "import {z} from 'zod';\n" +
-    "import {markChildRef} from '../../types/child-ref-helpers.js';\n\n";
+    "import {markChildRef} from '../../../types/zod/child-ref-helpers.js';\n\n";
 
   const defKeys = [
     ...topologicalOrder.filter(k => k in commonJson.$defs),
@@ -206,7 +208,10 @@ export type FunctionResponse = z.infer<typeof FunctionResponseSchema>;`;
   const commonEntries = defKeys.map(k => `  ${k}: ${k}Schema,`).join('\n');
   commonTs += `export const CommonSchemas = {\n${commonEntries}\n};\n\n`;
 
-  writeFileSync(join(destDir, 'common-types.ts'), commonTs);
+  writeFileSync(
+    join(destDir, 'common-types.ts'),
+    privatizeTypes(importRecursiveTypes(commonTs, '../common-types.js')),
+  );
 
   const pureCommonNames = new Set(Object.keys(commonJson.$defs));
   const helperNames = new Set();
@@ -269,7 +274,7 @@ function generateCatalogDefinition({pureCommonNames, helperNames}) {
   }
   catalogDefTs += '\n' + bodyCode;
 
-  writeFileSync(join(destDir, 'catalog-definition.ts'), catalogDefTs);
+  writeFileSync(join(destDir, 'catalog-definition.ts'), privatizeTypes(catalogDefTs));
 }
 
 /**
@@ -314,7 +319,7 @@ function generateIncomingMessageSchemas({pureCommonNames, helperNames}) {
   }
   a2rTs += '\n' + bodyCode;
 
-  writeFileSync(join(destDir, 'agent-to-renderer.ts'), a2rTs);
+  writeFileSync(join(destDir, 'agent-to-renderer.ts'), privatizeTypes(a2rTs));
 }
 
 /**
@@ -365,7 +370,7 @@ function generateOutgoingMessageSchemas({pureCommonNames, helperNames}) {
   }
   r2aTs += '\n' + bodyCode;
 
-  writeFileSync(join(destDir, 'renderer-to-agent.ts'), r2aTs);
+  writeFileSync(join(destDir, 'renderer-to-agent.ts'), privatizeTypes(r2aTs));
 }
 
 /**
@@ -381,7 +386,7 @@ function generateCapabilitiesSchemas() {
   rcTs += `/** Zod schema validating the strict v1.0 protocol renderer capabilities payload. */\n`;
   rcTs += v10Code + '\n';
 
-  writeFileSync(join(destDir, 'renderer-capabilities.ts'), rcTs);
+  writeFileSync(join(destDir, 'renderer-capabilities.ts'), privatizeTypes(rcTs));
 }
 
 export function generateSchemas() {

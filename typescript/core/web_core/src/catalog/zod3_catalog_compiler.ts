@@ -22,7 +22,7 @@
 import {z} from 'zod';
 
 import {isAtLeastVersion} from '../common/semver.js';
-import {CommonSchemas, ComponentCommonSchema} from '../types/common-types.js';
+import {CommonSchemas, ComponentCommonSchema} from '../types/zod/common-types.js';
 import {zod3ToJsonSchema} from './a2ui_json_schema.js';
 import {exclusiveUnion} from './exclusive_union.js';
 import type {CatalogSchemaCompiler} from './schema_compiler.js';

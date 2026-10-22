@@ -14,45 +14,146 @@
  * limitations under the License.
  */
 
-import type {z} from 'zod';
-import type {
-  ActionSchema,
-  AudioPlayerSchema,
-  ButtonSchema,
-  CardSchema,
-  CheckboxSchema,
-  ColumnSchema,
-  DateTimeInputSchema,
-  DividerSchema,
-  IconSchema,
-  ImageSchema,
-  ListSchema,
-  ModalSchema,
-  MultipleChoiceSchema,
-  RowSchema,
-  SliderSchema,
-  TabsSchema,
-  TextFieldSchema,
-  TextSchema,
-  VideoSchema,
-} from '../schema/common-types.js';
+import type {StringValue} from './primitives.js';
 
-export declare interface Action extends z.infer<typeof ActionSchema> {}
-export declare interface Text extends z.infer<typeof TextSchema> {}
-export declare interface Image extends z.infer<typeof ImageSchema> {}
-export declare interface Icon extends z.infer<typeof IconSchema> {}
-export declare interface Video extends z.infer<typeof VideoSchema> {}
-export declare interface AudioPlayer extends z.infer<typeof AudioPlayerSchema> {}
-export declare interface Tabs extends z.infer<typeof TabsSchema> {}
-export declare interface Row extends z.infer<typeof RowSchema> {}
-export declare interface Column extends z.infer<typeof ColumnSchema> {}
-export declare interface List extends z.infer<typeof ListSchema> {}
-export declare interface Button extends z.infer<typeof ButtonSchema> {}
-export declare interface Modal extends z.infer<typeof ModalSchema> {}
-export declare interface Card extends z.infer<typeof CardSchema> {}
-export declare interface Divider extends z.infer<typeof DividerSchema> {}
-export declare interface TextField extends z.infer<typeof TextFieldSchema> {}
-export declare interface Checkbox extends z.infer<typeof CheckboxSchema> {}
-export declare interface DateTimeInput extends z.infer<typeof DateTimeInputSchema> {}
-export declare interface MultipleChoice extends z.infer<typeof MultipleChoiceSchema> {}
-export declare interface Slider extends z.infer<typeof SliderSchema> {}
+/** The children of a container: an explicit list of IDs or a template. */
+interface ComponentArrayReferenceShape {
+  explicitList?: string[];
+  template?: {componentId: string; dataBinding: string};
+}
+
+/** Represents a user-initiated action. */
+export type Action = {
+  /** A unique name identifying the action (e.g., 'submitForm'). */
+  name: string;
+  /** A key-value map of data bindings to be resolved when the action is triggered. */
+  context?: {
+    key: string;
+    /** The dynamic value. Define EXACTLY ONE of the nested properties. */
+    value: {
+      path?: string;
+      literalString?: string;
+      literalNumber?: number;
+      literalBoolean?: boolean;
+    };
+  }[];
+};
+
+export type Text = {
+  text: StringValue;
+  usageHint?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'caption' | 'body';
+};
+
+export type Image = {
+  url: StringValue;
+  usageHint?: 'icon' | 'avatar' | 'smallFeature' | 'mediumFeature' | 'largeFeature' | 'header';
+  fit?: 'contain' | 'cover' | 'fill' | 'none' | 'scale-down';
+  altText?: StringValue;
+};
+
+export type Icon = {
+  name: StringValue;
+};
+
+export type Video = {
+  url: StringValue;
+};
+
+export type AudioPlayer = {
+  url: StringValue;
+  /** A label, title, or placeholder text. */
+  description?: StringValue;
+};
+
+export type Tabs = {
+  /** A list of tabs, each with a title and a child component ID. */
+  tabItems: {
+    title: {path?: string; literalString?: string};
+    /** A reference to a component instance by its unique ID. */
+    child: string;
+  }[];
+};
+
+export type Row = {
+  children: ComponentArrayReferenceShape;
+  distribution?: 'start' | 'center' | 'end' | 'spaceBetween' | 'spaceAround' | 'spaceEvenly';
+  alignment?: 'start' | 'center' | 'end' | 'stretch';
+};
+
+export type Column = {
+  children: ComponentArrayReferenceShape;
+  distribution?: 'start' | 'center' | 'end' | 'spaceBetween' | 'spaceAround' | 'spaceEvenly';
+  alignment?: 'start' | 'center' | 'end' | 'stretch';
+};
+
+export type List = {
+  children: ComponentArrayReferenceShape;
+  direction?: 'vertical' | 'horizontal';
+  alignment?: 'start' | 'center' | 'end' | 'stretch';
+};
+
+export type Button = {
+  /** The ID of the component to display as the button's content. */
+  child: string;
+  action: Action;
+  /** Indicates if this button should be styled as the primary action. */
+  primary?: boolean;
+};
+
+export type Modal = {
+  /** The ID of the component (e.g., a button) that triggers the modal. */
+  entryPointChild: string;
+  /** The ID of the component to display as the modal's content. */
+  contentChild: string;
+};
+
+export type Card = {
+  /** The ID of the component to be rendered inside the card. */
+  child: string;
+};
+
+export type Divider = {
+  /** The orientation. */
+  axis?: 'horizontal' | 'vertical';
+  /** The color of the divider (e.g., hex code or semantic name). */
+  color?: string;
+  /** The thickness of the divider. */
+  thickness?: number;
+};
+
+export type TextField = {
+  text?: StringValue;
+  /** A label, title, or placeholder text. */
+  label: StringValue;
+  textFieldType?: 'shortText' | 'number' | 'date' | 'longText' | 'obscured';
+  /** A regex string to validate the input. */
+  validationRegexp?: string;
+};
+
+export type Checkbox = {
+  label: StringValue;
+  value: {path?: string; literalBoolean?: boolean};
+};
+
+export type DateTimeInput = {
+  value: StringValue;
+  enableDate?: boolean;
+  enableTime?: boolean;
+  /** The string format for the output (e.g., 'YYYY-MM-DD'). */
+  outputFormat?: string;
+};
+
+export type MultipleChoice = {
+  selections: {path?: string; literalArray?: string[]};
+  options?: {label: {path?: string; literalString?: string}; value: string}[];
+  maxAllowedSelections?: number;
+  type?: 'checkbox' | 'chips';
+  filterable?: boolean;
+};
+
+export type Slider = {
+  value: {path?: string; literalNumber?: number};
+  minValue?: number;
+  maxValue?: number;
+  label?: StringValue;
+};

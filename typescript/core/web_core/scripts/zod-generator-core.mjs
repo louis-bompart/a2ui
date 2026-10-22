@@ -285,3 +285,39 @@ export function writeIndexFile(destDir, version, generatorSource) {
 
   writeFileSync(join(destDir, 'index.ts'), indexTs);
 }
+
+/**
+ * Makes the types a generated Zod module declares local to it: web_core
+ * declares the TypeScript types of the protocol in their own modules, which
+ * the generated Zod modules are exported beside.
+ *
+ * @param {string} code The module's code.
+ * @returns {string} The code, without exported types.
+ */
+export function privatizeTypes(code) {
+  return code.replace(/^export (type|interface) /gm, '$1 ');
+}
+
+/**
+ * Replaces the declarations a generated Zod module makes of the recursive
+ * `FunctionCall` and `DynamicValue` types, which its schemas are annotated
+ * with, by imports of the TypeScript types web_core declares.
+ *
+ * @param {string} code The module's code.
+ * @param {string} typesModule The import path of the TypeScript types module.
+ * @returns {string} The code.
+ */
+export function importRecursiveTypes(code, typesModule) {
+  const declarations = {
+    FunctionCall: /^export interface FunctionCall \{[\s\S]*?\n\}\n/m,
+    DynamicValue: /^export type DynamicValue = [^\n]*;\n/m,
+  };
+  const imported = Object.keys(declarations).filter(name => declarations[name].test(code));
+  if (imported.length === 0) return code;
+  let stripped = code;
+  for (const name of imported) stripped = stripped.replace(declarations[name], '');
+  return stripped.replace(
+    "import {z} from 'zod';\n",
+    `import {z} from 'zod';\nimport type {${imported.sort().join(', ')}} from '${typesModule}';\n`,
+  );
+}

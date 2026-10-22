@@ -122,21 +122,37 @@ export class TypeWriter {
     return {node, doc: target, isCommon: target === this.commonTypes};
   }
 
+  /**
+   * Returns the name of the TypeScript type a `$ref` written in `doc` is
+   * written as, or `undefined` to write the type it points to inline.
+   */
+  namedType(ref, doc) {
+    const {isCommon} = this.resolve(ref, doc);
+    const name = ref.split('/').pop();
+    if (isCommon && this.commonTypeNames.has(name)) {
+      this.usedCommonTypes.add(name);
+      return name;
+    }
+    return undefined;
+  }
+
+  /** Returns the TypeScript type of a `const` value. */
+  constType(value) {
+    return JSON.stringify(value);
+  }
+
   /** Returns the TypeScript type of a schema written in `doc`. */
   type(schema, doc, seen = new Set()) {
     if (!isObject(schema)) return 'any';
     if (typeof schema.$ref === 'string') {
+      const named = this.namedType(schema.$ref, doc);
+      if (named) return named;
       const {node, doc: targetDoc, isCommon} = this.resolve(schema.$ref, doc);
-      const name = schema.$ref.split('/').pop();
-      if (isCommon && this.commonTypeNames.has(name)) {
-        this.usedCommonTypes.add(name);
-        return name;
-      }
       const key = `${isCommon}:${schema.$ref}`;
       if (seen.has(key)) return 'any';
       return this.type(node, targetDoc, new Set([...seen, key]));
     }
-    if ('const' in schema) return JSON.stringify(schema.const);
+    if ('const' in schema) return this.constType(schema.const);
     if (Array.isArray(schema.enum)) return union(schema.enum.map(v => JSON.stringify(v)));
     for (const keyword of ['oneOf', 'anyOf']) {
       if (Array.isArray(schema[keyword])) {
@@ -154,9 +170,9 @@ export class TypeWriter {
     }
     const types = Array.isArray(schema.type) ? schema.type : [schema.type];
     if (schema.type === undefined) {
-      return schema.properties || schema.additionalProperties
-        ? this.objectType(schema, doc, seen)
-        : 'any';
+      // Without a `type`, `additionalProperties` constrains only objects, and
+      // allows any other value.
+      return schema.properties ? this.objectType(schema, doc, seen) : 'any';
     }
     return union(
       types.map(type => {

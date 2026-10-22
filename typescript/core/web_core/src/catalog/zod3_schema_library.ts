@@ -22,10 +22,10 @@ import {
   AccessibilityAttributesSchema,
   CommonSchemas,
   ComponentCommonSchema,
-} from '../types/common-types.js';
-import {A2uiMessageSchema as V08MessageSchema} from '../v0_8/schema/server-to-client.js';
-import {A2uiMessageSchema as V09MessageSchema} from '../v0_9/schema/server-to-client.js';
-import {AgentToRendererMessageSchema} from '../v1_0/schema/agent-to-renderer.js';
+} from '../types/zod/common-types.js';
+import {A2uiMessageSchema as V08MessageSchema} from '../v0_8/schema/zod/server-to-client.js';
+import {A2uiMessageSchema as V09MessageSchema} from '../v0_9/schema/zod/server-to-client.js';
+import {AgentToRendererMessageSchema} from '../v1_0/schema/zod/agent-to-renderer.js';
 import {zod3ToJsonSchema} from './a2ui_json_schema.js';
 import {isZod3Schema, zodSchemaOf} from './a2ui_schema.js';
 import type {CatalogDocumentShaper, SchemaLibrary} from './schema_library.js';

@@ -1,11 +1,11 @@
 /*
- * Copyright 2024 Google LLC
+ * Copyright 2026 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     https://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,130 +15,112 @@
  */
 
 // AUTO-GENERATED FILE - DO NOT EDIT MANUALLY
-// Generated from specification/v1.0/json/ via src/v1_0/scripts/generate-schemas.mjs
-import {z} from 'zod';
-import {ExtensionsSchema} from './common-types.js';
+// Generated from the specification's JSON schemas via scripts/generate-protocol-types.mjs
 
-export const FunctionCallValidationSchemaSchema = z
-  .object({
-    'type': z.literal('object'),
-    'description': z.string().optional(),
-    'properties': z
-      .object({
-        '@call': z.object({'const': z.string()}),
-        'args': z.record(z.string(), z.any()).optional(),
-      })
-      .strict(),
-    'required': z.array(z.string()),
-  })
-  .describe('JSON Schema structure that validates a wire-level FunctionCall object.');
-export type FunctionCallValidationSchema = z.infer<typeof FunctionCallValidationSchemaSchema>;
+import type {Extensions} from './common-types.js';
 
-export type FunctionCallValidationSchemaInput = z.input<typeof FunctionCallValidationSchemaSchema>;
+/**
+ * JSON Schema structure that validates a wire-level FunctionCall object.
+ */
+export type FunctionCallValidationSchema = {
+  type: 'object';
+  description?: string;
+  properties: {
+    '@call': {
+      const: string;
+    };
+    /**
+     * A JSON Schema describing the expected arguments (args) for this function.
+     */
+    args?: any;
+  };
+  required: string[];
+};
 
-export const FunctionDefinitionSchema = z
-  .record(z.string(), z.any())
-  .and(
-    z.intersection(
-      FunctionCallValidationSchemaSchema,
-      z.intersection(
-        z.object({
-          'returnType': z
-            .enum([
-              'string',
-              'number',
-              'boolean',
-              'array',
-              'object',
-              'validationResult',
-              'any',
-              'void',
-            ])
-            .describe('The type of value this function returns.'),
-          'allowedCallers': z
-            .enum(['rendererOnly', 'agentOnly', 'rendererOrAgent'])
-            .describe('Specifies which roles are authorized to invoke this function.')
-            .default('rendererOnly'),
-          'requiresUserActivation': z
-            .boolean()
-            .describe(
-              'Specifies whether this function requires a user activation context to execute.',
-            )
-            .default(false),
-        }),
-        z.any(),
-      ),
-    ),
-  )
-  .superRefine((val, ctx) => {
-    if (val && val.requiresUserActivation && val.allowedCallers !== 'rendererOnly') {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "requiresUserActivation=true must have allowedCallers='rendererOnly'.",
-        path: ['allowedCallers'],
-      });
-    }
-  })
-  .describe("Describes a function's validation schema and interface metadata.");
-export type FunctionDefinition = z.infer<typeof FunctionDefinitionSchema>;
+/**
+ * The input form of {@link FunctionCallValidationSchema}.
+ */
+export type FunctionCallValidationSchemaInput = FunctionCallValidationSchema;
 
-export type FunctionDefinitionInput = z.input<typeof FunctionDefinitionSchema>;
+/**
+ * Describes a function's validation schema and interface metadata.
+ */
+export type FunctionDefinition = FunctionCallValidationSchema & {
+  /**
+   * The type of value this function returns.
+   */
+  returnType:
+    | 'string'
+    | 'number'
+    | 'boolean'
+    | 'array'
+    | 'object'
+    | 'validationResult'
+    | 'any'
+    | 'void';
+  /**
+   * Specifies which roles are authorized to invoke this function.
+   */
+  allowedCallers?: 'rendererOnly' | 'agentOnly' | 'rendererOrAgent';
+  /**
+   * Specifies whether this function requires a user activation context to execute.
+   */
+  requiresUserActivation?: boolean;
+} & Record<string, any>;
 
-export const ComponentDefinitionSchema = z
-  .record(z.string(), z.any())
-  .and(
-    z.intersection(
-      z.record(z.string(), z.any()),
-      z.object({
-        'allowedParents': z
-          .array(z.string())
-          .refine(
-            arr => arr.every((item, i) => arr.indexOf(item) === i),
-            'All items must be unique!',
-          )
-          .describe(
-            'The list of parent component type names that can contain this component type. If omitted, all parent component types are allowed. To restrict a component so it can appear only as the top-level component (id=\'root\') of a surface, set "allowedParents": ["Surface"]. To allow a component as either the top-level component of a surface or a child of a specific container, specify both (e.g., "allowedParents": ["Surface", "CanvasContainer"]).',
-          )
-          .optional(),
-        'allowedChildren': z
-          .array(z.string())
-          .refine(
-            arr => arr.every((item, i) => arr.indexOf(item) === i),
-            'All items must be unique!',
-          )
-          .describe(
-            'The list of child component type names allowed inside this container or slot. If omitted, all child component types are allowed.',
-          )
-          .optional(),
-        'metadata': z
-          .object({'extensions': ExtensionsSchema.optional()})
-          .strict()
-          .describe('Optional static metadata.')
-          .optional(),
-      }),
-    ),
-  )
-  .describe("Describes a component's validation schema and composition constraints.");
-export type ComponentDefinition = z.infer<typeof ComponentDefinitionSchema>;
+/**
+ * The input form of {@link FunctionDefinition}.
+ */
+export type FunctionDefinitionInput = FunctionDefinition;
 
-export type ComponentDefinitionInput = z.input<typeof ComponentDefinitionSchema>;
+/**
+ * Describes a component's validation schema and composition constraints.
+ */
+export type ComponentDefinition = {
+  /**
+   * The list of parent component type names that can contain this component type. If omitted, all parent component types are allowed. To restrict a component so it can appear only as the top-level component (id='root') of a surface, set "allowedParents": ["Surface"]. To allow a component as either the top-level component of a surface or a child of a specific container, specify both (e.g., "allowedParents": ["Surface", "CanvasContainer"]).
+   */
+  allowedParents?: string[];
+  /**
+   * The list of child component type names allowed inside this container or slot. If omitted, all child component types are allowed.
+   */
+  allowedChildren?: string[];
+  /**
+   * Optional static metadata.
+   */
+  metadata?: {
+    extensions?: Extensions;
+  };
+} & Record<string, any>;
 
-export const ValidationResultSchema = z
-  .object({
-    'valid': z.boolean().describe('Whether the check passed.'),
-    'code': z
-      .string()
-      .describe('Machine-readable error code (e.g. EXPIRED_CARD, OUT_OF_RANGE).')
-      .optional(),
-    'message': z.string().describe('Human-readable error or warning message.').optional(),
-    'severity': z
-      .enum(['error', 'warning', 'info'])
-      .describe('Severity level of the validation result.')
-      .default('error'),
-  })
-  .describe(
-    'Dynamic validation result object returned by a validation condition function or data binding.',
-  );
-export type ValidationResult = z.infer<typeof ValidationResultSchema>;
+/**
+ * The input form of {@link ComponentDefinition}.
+ */
+export type ComponentDefinitionInput = ComponentDefinition;
 
-export type ValidationResultInput = z.input<typeof ValidationResultSchema>;
+/**
+ * Dynamic validation result object returned by a validation condition function or data binding.
+ */
+export type ValidationResult = {
+  /**
+   * Whether the check passed.
+   */
+  valid: boolean;
+  /**
+   * Machine-readable error code (e.g. EXPIRED_CARD, OUT_OF_RANGE).
+   */
+  code?: string;
+  /**
+   * Human-readable error or warning message.
+   */
+  message?: string;
+  /**
+   * Severity level of the validation result.
+   */
+  severity?: 'error' | 'warning' | 'info';
+};
+
+/**
+ * The input form of {@link ValidationResult}.
+ */
+export type ValidationResultInput = ValidationResult;

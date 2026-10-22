@@ -18,10 +18,12 @@ import {readFileSync, writeFileSync, readdirSync, existsSync} from 'node:fs';
 import {join, dirname, resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
+import {privatizeTypes} from './zod-generator-core.mjs';
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = join(__dirname, '..');
 const defaultSpecDir = join(rootDir, '..', '..', '..', 'specification');
-const defaultDestFile = join(rootDir, 'src', 'types', 'common-types.ts');
+const defaultDestFile = join(rootDir, 'src', 'types', 'zod', 'common-types.ts');
 
 export const HEADER = `/*
  * Copyright 2024 Google LLC
@@ -634,7 +636,7 @@ export const CommonSchemas = {
   }
   outTs += `};\n\n`;
 
-  writeFileSync(destinationFile, outTs);
+  writeFileSync(destinationFile, privatizeTypes(outTs));
   console.log(`Successfully generated superset common types in ${destinationFile}`);
 }
 

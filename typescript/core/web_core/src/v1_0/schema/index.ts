@@ -1,11 +1,11 @@
 /*
- * Copyright 2024 Google LLC
+ * Copyright 2026 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     https://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,10 +15,12 @@
  */
 
 // AUTO-GENERATED FILE - DO NOT EDIT MANUALLY
-// Generated from specification/v1.0/json/ via src/v1_0/scripts/generate-schemas.mjs
-export * from './agent-to-renderer.js';
-export * from './catalog-definition.js';
+// Generated from the specification's JSON schemas via scripts/generate-protocol-types.mjs
+
 export * from './common-types.js';
-export * from './renderer-capabilities.js';
+export * from './agent-to-renderer.js';
 export * from './renderer-to-agent.js';
+export * from './renderer-capabilities.js';
+export * from './catalog-definition.js';
 export * from './helpers.js';
+export * from './zod/index.js';

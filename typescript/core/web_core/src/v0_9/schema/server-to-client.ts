@@ -1,11 +1,11 @@
 /*
- * Copyright 2024 Google LLC
+ * Copyright 2026 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     https://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,116 +15,101 @@
  */
 
 // AUTO-GENERATED FILE - DO NOT EDIT MANUALLY
-// Generated from specification/v0.9/json/ via src/v0_9/scripts/generate-schemas.mjs
-import {z} from 'zod';
+// Generated from the specification's JSON schemas via scripts/generate-protocol-types.mjs
 
-export const CreateSurfaceMessageSchema = z
-  .object({
-    'version': z.enum(['v0.9', 'v0.9.1']),
-    'createSurface': z
-      .object({
-        'surfaceId': z
-          .string()
-          .describe('The unique identifier for the UI surface to be rendered.'),
-        'catalogId': z
-          .string()
-          .describe(
-            "A string that uniquely identifies this catalog. It is recommended to prefix this with an internet domain that you own, to avoid conflicts e.g. mycompany.com:somecatalog'.",
-          ),
-        'theme': z.any().optional(),
-        'sendDataModel': z
-          .boolean()
-          .describe(
-            'If true, the client will send the full data model of this surface in the metadata of every A2A message sent to the server that created the surface. Defaults to false.',
-          )
-          .optional(),
-      })
-      .strict()
-      .describe(
-        "Signals the client to create a new surface and begin rendering it. It is an error to send 'createSurface' for a surfaceId that already exists without first deleting it. When this message is sent, the client will expect 'updateComponents' and/or 'updateDataModel' messages for the same surfaceId that define the component tree.",
-      ),
-  })
-  .strict();
-export type CreateSurfaceMessage = z.infer<typeof CreateSurfaceMessageSchema>;
+export type CreateSurfaceMessage = {
+  version: 'v0.9' | 'v0.9.1';
+  /**
+   * Signals the client to create a new surface and begin rendering it. It is an error to send 'createSurface' for a surfaceId that already exists without first deleting it. When this message is sent, the client will expect 'updateComponents' and/or 'updateDataModel' messages for the same surfaceId that define the component tree.
+   */
+  createSurface: {
+    /**
+     * The unique identifier for the UI surface to be rendered.
+     */
+    surfaceId: string;
+    /**
+     * A string that uniquely identifies this catalog. It is recommended to prefix this with an internet domain that you own, to avoid conflicts e.g. mycompany.com:somecatalog'.
+     */
+    catalogId: string;
+    /**
+     * Theme parameters for the surface (e.g., {'primaryColor': '#FF0000'}). These must validate against the 'theme' schema defined in the catalog.
+     */
+    theme?: any;
+    /**
+     * If true, the client will send the full data model of this surface in the metadata of every A2A message sent to the server that created the surface. Defaults to false.
+     */
+    sendDataModel?: boolean;
+  };
+};
 
-export const UpdateComponentsMessageSchema = z
-  .object({
-    'version': z.enum(['v0.9', 'v0.9.1']),
-    'updateComponents': z
-      .object({
-        'surfaceId': z.string().describe('The unique identifier for the UI surface to be updated.'),
-        'components': z
-          .array(z.record(z.string(), z.any()))
-          .min(1)
-          .describe('A list containing all UI components for the surface.'),
-      })
-      .strict()
-      .describe(
-        "Updates a surface with a new set of components. This message can be sent multiple times to update the component tree of an existing surface. One of the components in one of the components lists MUST have an 'id' of 'root' to serve as the root of the component tree. A createSurface message MUST have been previously sent for the 'surfaceId' in this message; the surface's catalog is the one specified by that createSurface.",
-      ),
-  })
-  .strict();
-export type UpdateComponentsMessage = z.infer<typeof UpdateComponentsMessageSchema>;
+export type UpdateComponentsMessage = {
+  version: 'v0.9' | 'v0.9.1';
+  /**
+   * Updates a surface with a new set of components. This message can be sent multiple times to update the component tree of an existing surface. One of the components in one of the components lists MUST have an 'id' of 'root' to serve as the root of the component tree. A createSurface message MUST have been previously sent for the 'surfaceId' in this message; the surface's catalog is the one specified by that createSurface.
+   */
+  updateComponents: {
+    /**
+     * The unique identifier for the UI surface to be updated.
+     */
+    surfaceId: string;
+    /**
+     * A list containing all UI components for the surface.
+     */
+    components: any[];
+  };
+};
 
-export const UpdateDataModelMessageSchema = z
-  .object({
-    'version': z.enum(['v0.9', 'v0.9.1']),
-    'updateDataModel': z
-      .object({
-        'surfaceId': z
-          .string()
-          .describe('The unique identifier for the UI surface this data model update applies to.'),
-        'path': z
-          .string()
-          .describe(
-            "An optional path to a location within the data model (e.g., '/user/name'). If omitted, or set to '/', refers to the entire data model.",
-          )
-          .optional(),
-        'value': z
-          .any()
-          .describe(
-            "The data to be updated in the data model. If present, the value at 'path' is replaced (or created). If omitted, the key at 'path' is removed.",
-          )
-          .optional(),
-      })
-      .strict()
-      .describe(
-        "Updates the data model for an existing surface. This message can be sent multiple times to update the data model. A createSurface message MUST have been previously sent for the 'surfaceId' in this message; the surface's catalog is the one specified by that createSurface.",
-      ),
-  })
-  .strict();
-export type UpdateDataModelMessage = z.infer<typeof UpdateDataModelMessageSchema>;
+export type UpdateDataModelMessage = {
+  version: 'v0.9' | 'v0.9.1';
+  /**
+   * Updates the data model for an existing surface. This message can be sent multiple times to update the data model. A createSurface message MUST have been previously sent for the 'surfaceId' in this message; the surface's catalog is the one specified by that createSurface.
+   */
+  updateDataModel: {
+    /**
+     * The unique identifier for the UI surface this data model update applies to.
+     */
+    surfaceId: string;
+    /**
+     * An optional path to a location within the data model (e.g., '/user/name'). If omitted, or set to '/', refers to the entire data model.
+     */
+    path?: string;
+    /**
+     * The data to be updated in the data model. If present, the value at 'path' is replaced (or created). If omitted, the key at 'path' is removed.
+     */
+    value?: any;
+  };
+};
 
-export const DeleteSurfaceMessageSchema = z
-  .object({
-    'version': z.enum(['v0.9', 'v0.9.1']),
-    'deleteSurface': z
-      .object({
-        'surfaceId': z.string().describe('The unique identifier for the UI surface to be deleted.'),
-      })
-      .strict()
-      .describe(
-        "Signals the client to delete the surface identified by 'surfaceId'. A createSurface message MUST have been previously sent for the 'surfaceId' in this message; the surface's catalog is the one specified by that createSurface.",
-      ),
-  })
-  .strict();
-export type DeleteSurfaceMessage = z.infer<typeof DeleteSurfaceMessageSchema>;
+export type DeleteSurfaceMessage = {
+  version: 'v0.9' | 'v0.9.1';
+  /**
+   * Signals the client to delete the surface identified by 'surfaceId'. A createSurface message MUST have been previously sent for the 'surfaceId' in this message; the surface's catalog is the one specified by that createSurface.
+   */
+  deleteSurface: {
+    /**
+     * The unique identifier for the UI surface to be deleted.
+     */
+    surfaceId: string;
+  };
+};
 
-export const A2uiMessageSchema = z.union([
-  CreateSurfaceMessageSchema,
-  UpdateComponentsMessageSchema,
-  UpdateDataModelMessageSchema,
-  DeleteSurfaceMessageSchema,
-]);
-export type A2uiMessage = z.infer<typeof A2uiMessageSchema>;
+/**
+ * Describes a JSON payload for an A2UI (Agent to UI) message, which is used to dynamically construct and update user interfaces.
+ */
+export type A2uiMessage =
+  | CreateSurfaceMessage
+  | UpdateComponentsMessage
+  | UpdateDataModelMessage
+  | DeleteSurfaceMessage;
 
-export const A2uiMessageListSchema = z.array(A2uiMessageSchema).describe('A list of messages.');
-export type A2uiMessageList = z.infer<typeof A2uiMessageListSchema>;
+/**
+ * A list of messages.
+ */
+export type A2uiMessageList = A2uiMessage[];
 
-export const A2uiMessageListWrapperSchema = z
-  .object({
-    messages: A2uiMessageListSchema,
-  })
-  .strict()
-  .describe('An object wrapping a list of messages.');
-export type A2uiMessageListWrapper = z.infer<typeof A2uiMessageListWrapperSchema>;
+/**
+ * An object wrapping a list of messages.
+ */
+export type A2uiMessageListWrapper = {
+  messages: A2uiMessageList;
+};

@@ -20,7 +20,7 @@ import {zodToJsonSchema} from 'zod-to-json-schema';
 import {readFileSync} from 'fs';
 import {resolve, join, dirname} from 'path';
 import {fileURLToPath} from 'url';
-import {A2uiMessageSchema as V08A2uiMessageSchema} from './server-to-client.js';
+import {A2uiMessageSchema as V08A2uiMessageSchema} from './zod/server-to-client.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

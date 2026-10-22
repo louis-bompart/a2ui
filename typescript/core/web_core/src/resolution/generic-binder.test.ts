@@ -28,7 +28,8 @@ import {ComponentContext} from './component-context.js';
 import {SurfaceModel} from '../state/surface-model.js';
 import {Catalog, FunctionImplementation} from '../catalog/types.js';
 import {ComponentModel} from '../state/component-model.js';
-import {CommonSchemas, type DataBinding, type FunctionCall} from '../types/common-types.js';
+import {CommonSchemas} from '../types/zod/common-types.js';
+import type {DataBinding, FunctionCall} from '../types/common-types.js';
 
 describe('GenericBinder Checkable Trait', () => {
   function setupSurfaceAndMocks() {

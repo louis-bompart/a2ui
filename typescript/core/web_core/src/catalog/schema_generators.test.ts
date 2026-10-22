@@ -16,7 +16,7 @@
 
 import {describe, it} from 'node:test';
 import assert from 'node:assert';
-import {ExtensionsSchema} from '../types/common-types.js';
+import {ExtensionsSchema} from '../types/zod/common-types.js';
 const zodCore = await import(
   new URL('../../../scripts/zod-generator-core.mjs', import.meta.url).href
 );
