@@ -279,8 +279,7 @@ export function writeIndexFile(destDir, version, generatorSource) {
     )
     .sort();
 
-  // Importing a version's schemas installs the Zod 3 schema library.
-  let indexTs = `${getHeader(version, generatorSource)}import '../install.js';\n\n`;
+  let indexTs = getHeader(version, generatorSource);
   for (const file of generatedFiles) {
     indexTs += `export * from './${file.replace('.ts', '.js')}';\n`;
   }

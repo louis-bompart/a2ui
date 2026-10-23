@@ -1,6 +1,6 @@
 ## Unreleased
 
-- Import `@a2ui/schema-zod3`, the Zod 3 schema library `@a2ui/web_core` no longer bundles, so messages are still validated and the basic catalogs still compile ([#2160](https://github.com/a2ui-project/a2ui/issues/2160)). `A2uiMessageSchema` (v0.8) comes from `@a2ui/schema-zod3/v0_8`.
+- Import `@a2ui/schema-zod3/install`, which installs the Zod 3 schema library `@a2ui/web_core` no longer bundles, so messages are still validated and the basic catalogs still compile ([#2160](https://github.com/a2ui-project/a2ui/issues/2160)). `A2uiMessageSchema` (v0.8) comes from `@a2ui/schema-zod3/v0_8`.
 - `ComponentApiToProps` infers props with `InferredComponentApiSchemaType` instead of `z.infer`, and `AngularCatalog` takes an `A2uiSchema` (any Standard Schema) as its theme schema.
 
 ## 0.13.0

@@ -9,17 +9,32 @@ The Zod 3 schema library of A2UI. [`@a2ui/web_core`](../web_core/README.md) depe
 
 ## Usage
 
-Importing the package, or any of its entry points, installs the Zod 3 library into web_core with `installSchemaLibrary`. From then on, web_core validates protocol messages with its schemas and compiles the catalogs loaded from JSON, including the basic catalogs, into Zod 3 schemas.
+Importing the package installs nothing. Each owner picks what it needs explicitly.
+
+An application installs the Zod 3 library into web_core with the `/install` entry point. From then on, web_core validates protocol messages with its schemas, compiles the catalogs loaded from JSON, including the basic catalogs, into Zod 3 schemas, and converts Zod 3 schemas to JSON Schema.
 
 ```ts
-import '@a2ui/schema-zod3';
+import '@a2ui/schema-zod3/install';
 import {MessageProcessor} from '@a2ui/web_core/v0_9';
 import {basicCatalog} from '@a2ui/web_core/v0_9/basic_catalog';
 
 const processor = new MessageProcessor([basicCatalog]);
 ```
 
-The Angular, Lit and React renderers import it, so an application using one of them needs nothing more.
+The same is `installSchemaLibrary(zod3SchemaLibrary())`, which lets the application choose when, and in which order with other libraries. The Angular, Lit and React renderers import `@a2ui/schema-zod3/install`, so an application using one of them needs nothing more.
+
+A catalog that compiles its own document with Zod 3 passes the compiler instead, and needs no installed library: the schemas it returns implement Standard JSON Schema.
+
+```ts
+import {zod3CatalogSchemaCompiler} from '@a2ui/schema-zod3';
+import {Catalog} from '@a2ui/web_core/catalog';
+
+const catalog = Catalog.fromJson(document, '1.0', undefined, {
+  schemaCompiler: zod3CatalogSchemaCompiler,
+});
+```
+
+An application can likewise validate messages with the Zod 3 protocol schemas without installing anything, through `new MessageProcessor(catalogs, undefined, {protocolSchemas: {'1.0': AgentToRendererMessageSchema}})`.
 
 To define a component with Zod 3, use the schemas of the common types, which carry the `$ref`s web_core binds them by:
 

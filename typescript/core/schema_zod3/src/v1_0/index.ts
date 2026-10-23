@@ -16,8 +16,6 @@
 
 // AUTO-GENERATED FILE - DO NOT EDIT MANUALLY
 // Generated from specification/v1.0/json/ via scripts/generate-v1_0-schemas.mjs
-import '../install.js';
-
 export * from './agent-to-renderer.js';
 export * from './catalog-definition.js';
 export * from './common-types.js';

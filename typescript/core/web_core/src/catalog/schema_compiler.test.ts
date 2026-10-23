@@ -17,19 +17,27 @@
 import * as assert from 'node:assert';
 import {afterEach, describe, it} from 'node:test';
 
+import {
+  zod3CatalogSchemaCompiler,
+  zod3SchemaLibrary,
+  zod3ToJsonSchema,
+  zodSchemaOf,
+} from '@a2ui/schema-zod3';
+
 import {A2uiValidationError} from '../errors.js';
 import {VersionAdapterFactory} from '../processing/adapters/factory.js';
 import {MessageProcessor} from '../processing/message-processor.js';
-import {a2uiJsonSchemaOf, zod3ToJsonSchema} from './a2ui_json_schema.js';
-import {zodSchemaOf, type A2uiSchema, type StandardJSONSchemaV1} from './a2ui_schema.js';
+import {getKnownSchemaKeys} from '../resolution/data-context.js';
+import {a2uiJsonSchemaOf} from './a2ui_json_schema.js';
+import type {A2uiSchema, StandardJSONSchemaV1} from './a2ui_schema.js';
 import {
   setDefaultCatalogSchemaCompiler,
   type CatalogSchemaCompiler,
   type CatalogSchemaContext,
 } from './schema_compiler.js';
 import type {JsonSchemaObject} from './json_schema.js';
+import {installSchemaLibrary, uninstallSchemaLibrary} from './schema_library.js';
 import {Catalog} from './types.js';
-import {zod3CatalogSchemaCompiler} from './zod3_catalog_compiler.js';
 
 /**
  * A schema that checks only the `required` keywords of an object schema, and
@@ -244,5 +252,40 @@ describe('zod3CatalogSchemaCompiler', () => {
     assert.ok(converter, 'the compiled schema implements Standard JSON Schema');
     assert.deepStrictEqual(converter.output({target: 'draft-2020-12'}), zod3ToJsonSchema(schema));
     assert.deepStrictEqual(Object.keys(a2uiJsonSchemaOf(schema)['properties'] ?? {}), ['label']);
+  });
+
+  it('compiles a catalog that binds and validates without an installed library', () => {
+    const library = zod3SchemaLibrary();
+    uninstallSchemaLibrary(library);
+    try {
+      const catalog = Catalog.fromJson(DOCUMENT, '0.9', undefined, {
+        schemaCompiler: zod3CatalogSchemaCompiler,
+      });
+      const proc = new MessageProcessor([catalog as never], undefined, {
+        protocolSchemas: {'0.9': null},
+        envelopeSchemas: null,
+      });
+      proc.processMessages([
+        {version: 'v0.9', createSurface: {surfaceId: 's1', catalogId: catalog.id}},
+      ]);
+      const update = (component: Record<string, unknown>) =>
+        proc.processMessages([
+          {
+            version: 'v0.9',
+            updateComponents: {surfaceId: 's1', components: [component as never]},
+          },
+        ]);
+      update({id: 'root', component: 'Badge', label: 'New'});
+      assert.throws(
+        () => update({id: 'other', component: 'Badge', label: 42}),
+        A2uiValidationError,
+      );
+      assert.deepStrictEqual(
+        [...(getKnownSchemaKeys(catalog.components.get('Badge')!.schema) ?? [])],
+        ['label'],
+      );
+    } finally {
+      installSchemaLibrary(library);
+    }
   });
 });

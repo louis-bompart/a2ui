@@ -149,7 +149,7 @@
     "test:conformance": "wireit",
     "test:timing": "wireit",
     "generate-schemas": "wireit",
-    "test:coverage": "c8 node --import @a2ui/schema-zod3 --test \"dist/**/*.test.js\"",
+    "test:coverage": "c8 node --import @a2ui/schema-zod3/install --test \"dist/**/*.test.js\"",
     "compile": "tsc",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -204,14 +204,14 @@
       "clean": "if-file-deleted"
     },
     "test": {
-      "command": "node --import @a2ui/schema-zod3 --test \"dist/**/*.test.js\" \"tests/timing/*.test.mjs\"",
+      "command": "node --import @a2ui/schema-zod3/install --test \"dist/**/*.test.js\" \"tests/timing/*.test.mjs\"",
       "dependencies": [
         "build:tests",
         "test:conformance"
       ]
     },
     "test:conformance": {
-      "command": "node --import @a2ui/schema-zod3 tests/conformance/conformance_test.mjs",
+      "command": "node --import @a2ui/schema-zod3/install tests/conformance/conformance_test.mjs",
       "dependencies": [
         "build:tests"
       ],
@@ -222,7 +222,7 @@
       "output": []
     },
     "test:timing": {
-      "command": "node --import @a2ui/schema-zod3 --expose-gc --test --test-concurrency=1 \"tests/timing/**/*_test.mjs\"",
+      "command": "node --import @a2ui/schema-zod3/install --expose-gc --test --test-concurrency=1 \"tests/timing/**/*_test.mjs\"",
       "dependencies": [
         "build:tests"
       ]

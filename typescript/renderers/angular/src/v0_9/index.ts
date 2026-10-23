@@ -16,7 +16,7 @@
 
 // Installs the Zod 3 schema library, which validates the A2UI messages and
 // compiles the schemas of the catalogs loaded from JSON.
-import '@a2ui/schema-zod3';
+import '@a2ui/schema-zod3/install';
 
 /**
  * Public API surface for A2UI Angular Renderer v0.9.

@@ -140,7 +140,7 @@
       "output": []
     },
     "test:node": {
-      "command": "node --import tsx --test \"src/functions/**/*.test.ts\" src/dynamic-values.test.ts",
+      "command": "node --import tsx --import @a2ui/schema-zod3/install --test \"src/functions/**/*.test.ts\" src/dynamic-values.test.ts",
       "dependencies": [
         "build:tsc"
       ],

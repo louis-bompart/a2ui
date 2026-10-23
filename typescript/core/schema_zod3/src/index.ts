@@ -15,11 +15,11 @@
  */
 
 /**
- * The Zod 3 schema library for A2UI. Importing it installs it in
- * `@a2ui/web_core` (see `installSchemaLibrary`).
+ * The Zod 3 schema library for A2UI. Importing it installs nothing: an app
+ * installs the library with `import '@a2ui/schema-zod3/install'`, or by
+ * passing `zod3SchemaLibrary()` to `installSchemaLibrary`, and a catalog can
+ * compile its document with `zod3CatalogSchemaCompiler` alone.
  */
-
-import './install.js';
 
 export {exclusiveUnion, exclusiveUnionOverride} from './catalog/exclusive_union.js';
 export {

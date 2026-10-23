@@ -23,11 +23,7 @@
   "author": "Google",
   "type": "module",
   "sideEffects": [
-    "./dist/src/install.js",
-    "./dist/src/index.js",
-    "./dist/src/v0_8/index.js",
-    "./dist/src/v0_9/index.js",
-    "./dist/src/v1_0/index.js"
+    "./dist/src/install.js"
   ],
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
@@ -35,6 +31,10 @@
     ".": {
       "types": "./dist/src/index.d.ts",
       "default": "./dist/src/index.js"
+    },
+    "./install": {
+      "types": "./dist/src/install.d.ts",
+      "default": "./dist/src/install.js"
     },
     "./v0_8": {
       "types": "./dist/src/v0_8/index.d.ts",

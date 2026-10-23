@@ -18,7 +18,7 @@ import {installSchemaLibrary} from '@a2ui/web_core/schema-library';
 
 import {zod3SchemaLibrary} from './catalog/zod3_schema_library.js';
 
-// Importing any entry point of @a2ui/schema-zod3 installs the Zod 3 schema
-// library, so that web_core compiles loaded catalogs, validates protocol
-// messages and reads Zod 3 schemas with it.
+// Importing `@a2ui/schema-zod3/install` installs the Zod 3 schema library, so
+// that web_core compiles loaded catalogs, validates protocol messages and
+// reads Zod 3 schemas with it. No other entry point installs it.
 installSchemaLibrary(zod3SchemaLibrary());

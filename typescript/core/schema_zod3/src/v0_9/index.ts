@@ -16,8 +16,6 @@
 
 // AUTO-GENERATED FILE - DO NOT EDIT MANUALLY
 // Generated from specification/v0.9/json/ via scripts/generate-v0_9-schemas.mjs
-import '../install.js';
-
 export * from './client-capabilities.js';
 export * from './client-to-server.js';
 export * from './common-types.js';

@@ -14,7 +14,5 @@
  * limitations under the License.
  */
 
-import '../install.js';
-
 export * from './common-types.js';
 export * from './server-to-client.js';

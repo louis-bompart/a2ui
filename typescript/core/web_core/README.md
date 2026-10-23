@@ -91,10 +91,12 @@ web_core reads every schema through [Standard Schema](https://standardschema.dev
 - the `CatalogSchemaCompiler` that `Catalog.fromJson`, and so the basic catalogs, use by default;
 - the conversion to JSON Schema of the library's schemas that implement no Standard JSON Schema, such as Zod 3 schemas.
 
-`@a2ui/schema-zod3` installs the Zod 3 library when imported, and the Angular, Lit and React renderers import it. Without an installed library, messages are not validated against the protocol schemas, and compiling the schema of an entry loaded with `Catalog.fromJson` throws unless a compiler is given (`Catalog.fromJson(json, version, id, {schemaCompiler})` or `setDefaultCatalogSchemaCompiler`).
+Each owner can also pass its part explicitly instead: a catalog its compiler, with `Catalog.fromJson(json, version, id, {schemaCompiler})`, and an application the protocol and envelope schemas, with the `protocolSchemas` and `envelopeSchemas` options of `MessageProcessor`. The installed libraries only fill in what is not passed.
+
+`import '@a2ui/schema-zod3/install'` installs the Zod 3 library, and the Angular, Lit and React renderers import it. Without an installed library or explicit schemas, messages are not validated against the protocol schemas, and compiling the schema of an entry loaded with `Catalog.fromJson` throws unless a compiler is given (`Catalog.fromJson(json, version, id, {schemaCompiler})` or `setDefaultCatalogSchemaCompiler`).
 
 ```ts
-import '@a2ui/schema-zod3';
+import '@a2ui/schema-zod3/install';
 import {MessageProcessor} from '@a2ui/web_core/v0_9';
 import {basicCatalog} from '@a2ui/web_core/v0_9/basic_catalog';
 
