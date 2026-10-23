@@ -41,16 +41,16 @@ export type {
 export {Schemas as V08Schemas} from '@a2ui/web_core/v0_8';
 
 // ./v0_9
+export {Schemas as V09Schemas, V09_STANDARD_DEFS} from '@a2ui/web_core/v0_9';
 export {
   CreateSurfaceMessageSchema as V09CreateSurfaceMessageSchema,
   UpdateComponentsMessageSchema as V09UpdateComponentsMessageSchema,
   UpdateDataModelMessageSchema as V09UpdateDataModelMessageSchema,
   DeleteSurfaceMessageSchema as V09DeleteSurfaceMessageSchema,
-  Schemas as V09Schemas,
-  V09_STANDARD_DEFS,
-} from '@a2ui/web_core/v0_9';
+} from '@a2ui/schema-zod3/v0_9';
 
 // ./v1_0
+export {Schemas as V10Schemas, V10_STANDARD_DEFS} from '@a2ui/web_core/v1_0';
 export {
   CreateSurfaceMessageSchema as V10CreateSurfaceMessageSchema,
   UpdateComponentsMessageSchema as V10UpdateComponentsMessageSchema,
@@ -60,10 +60,8 @@ export {
   AgentFunctionResponseMessageSchema as V10AgentFunctionResponseMessageSchema,
   AgentToRendererMessageSchema,
   RendererToAgentMessageSchema,
-  Schemas as V10Schemas,
   V10RendererCapabilitiesSchema,
-  V10_STANDARD_DEFS,
-} from '@a2ui/web_core/v1_0';
+} from '@a2ui/schema-zod3/v1_0';
 import type {
   AgentToRendererMessage,
   RendererToAgentMessage,

@@ -26,11 +26,11 @@ import {A2uiText as V10Text} from '../catalogs/basic/v1/components/index.js';
 import {basicCatalog as v08BasicCatalog} from '../v0_8/basic_catalog/catalog.js';
 import {basicCatalog as v09BasicCatalog} from '../v0_9/basic_catalog/catalog.js';
 import {A2uiText as V09Text} from '../v0_9/basic_catalog/components/index.js';
-import {exclusiveUnion} from './exclusive_union.js';
+import {exclusiveUnion} from '@a2ui/schema-zod3';
 import {JsonComponentApi, JsonFunctionApi} from './json_entries.js';
-import {isZod3Schema, zodSchemaOf} from './a2ui_schema.js';
+import {isZod3Schema, zodSchemaOf} from '@a2ui/schema-zod3';
 import {DEFAULT_PROTOCOL_VERSION} from './schema_loader.js';
-import {spec, specDef} from './spec_annotations.js';
+import {spec, specDef} from '@a2ui/schema-zod3';
 import {
   Catalog,
   createFunctionImplementation,

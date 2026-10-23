@@ -24,11 +24,11 @@ import {
   formatA2uiSchemaIssue,
   isA2uiSchema,
   validateA2uiSchema,
-  zodSchemaOf,
   type A2uiSchema,
   type InferA2uiSchemaOutput,
   type StandardSchemaV1,
 } from './a2ui_schema.js';
+import {zodSchemaOf} from '@a2ui/schema-zod3';
 import {Catalog, createFunctionImplementation, type ComponentApi} from './types.js';
 
 /** A Standard Schema built without any schema library. */

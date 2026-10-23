@@ -25,7 +25,8 @@ import {V10_CHILD_REF_OPTIONS} from '../v1_0/standard_defs.js';
 import {STRICT_VALIDATION} from '../validation/integrity-checker.js';
 import {PayloadValidator} from '../validation/payload-validator.js';
 import {A2uiCatalogError} from '../errors.js';
-import {validateA2uiSchema, zodSchemaOf} from './a2ui_schema.js';
+import {validateA2uiSchema} from './a2ui_schema.js';
+import {zodSchemaOf} from '@a2ui/schema-zod3';
 
 describe('Catalog.fromJson & schema_loader', () => {
   const basicCatalogPath = resolve(

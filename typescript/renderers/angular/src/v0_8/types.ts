@@ -21,6 +21,7 @@
  * Documentation for each type is available in the web core package.
  */
 
+import {A2uiMessageSchema as WebCoreA2uiMessageSchema} from '@a2ui/schema-zod3/v0_8';
 import * as WebCore from '@a2ui/web_core/v0_8';
 
 // Messages & Infrastructure
@@ -35,7 +36,7 @@ export type Surface = WebCore.Surface;
 export type A2UIClientEventMessage = WebCore.A2UIClientEventMessage;
 export type ClientToServerMessage = A2UIClientEventMessage;
 export type ServerToClientMessage = WebCore.ServerToClientMessage;
-export const A2uiMessageSchema = WebCore.A2uiMessageSchema;
+export const A2uiMessageSchema = WebCoreA2uiMessageSchema;
 export type A2uiMessage = WebCore.A2uiMessage;
 
 // Components & Interfaces

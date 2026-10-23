@@ -20,7 +20,7 @@ import {describe, it} from 'node:test';
 
 import {z} from 'zod';
 
-import {CheckRuleSchema} from '../types/zod/common-types.js';
+import {CheckRuleSchema} from '@a2ui/schema-zod3';
 import {V09_STANDARD_DEFS} from '../v0_9/standard_defs.js';
 import {V10_STANDARD_DEFS} from '../v1_0/standard_defs.js';
 import {cleanSchemaNode, generateValidationSchema} from './schema_generator.js';

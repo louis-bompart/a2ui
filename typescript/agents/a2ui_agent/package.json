@@ -60,7 +60,8 @@
     "build:tsc": {
       "command": "tsc -b --pretty",
       "dependencies": [
-        "../../core/web_core:build"
+        "../../core/web_core:build",
+        "../../core/schema_zod3:build"
       ],
       "files": [
         "src/**/*.ts",
@@ -127,7 +128,9 @@
     "wireit": "^0.15.0-pre.2"
   },
   "dependencies": {
+    "@a2ui/schema-zod3": "workspace:*",
     "@a2ui/web_core": "workspace:*",
-    "antlr4ng": "3.0.16"
+    "antlr4ng": "3.0.16",
+    "zod": "^3.25.76"
   }
 }

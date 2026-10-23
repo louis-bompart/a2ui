@@ -25,7 +25,7 @@ import {
   UpdateComponentsMessageSchema,
   UpdateDataModelMessageSchema,
   DeleteSurfaceMessageSchema,
-} from '../schema/zod/server-to-client.js';
+} from '@a2ui/schema-zod3/v0_9';
 
 function findRepoRoot(dir: string): string {
   let cur = dir;

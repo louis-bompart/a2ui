@@ -118,14 +118,13 @@
 
 import {
   A2uiExpressionError,
-  DynamicStringSchema,
-  DynamicValueSchema,
   createFunctionImplementation,
   type A2uiMessage,
   type CreateSurfaceMessage,
   type FunctionImplementation,
   type MessageProcessor,
 } from '@a2ui/web_core/v0_9';
+import {DynamicStringSchema, DynamicValueSchema} from '@a2ui/schema-zod3/v0_9';
 import type {Client} from '@modelcontextprotocol/sdk/client/index.js';
 import {CallToolResultSchema} from '@modelcontextprotocol/sdk/types.js';
 import type {CallToolResult, ReadResourceResult} from '@modelcontextprotocol/sdk/types.js';

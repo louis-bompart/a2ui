@@ -22,7 +22,8 @@ import * as url from 'node:url';
 
 import {A2uiCatalogError} from '../errors.js';
 import {MessageProcessor} from '../processing/message-processor.js';
-import {validateA2uiSchema, zodSchemaOf} from './a2ui_schema.js';
+import {validateA2uiSchema} from './a2ui_schema.js';
+import {zodSchemaOf} from '@a2ui/schema-zod3';
 import {PayloadValidator} from '../validation/payload-validator.js';
 import {Catalog, CatalogApi, ComponentApi, linkCatalogs} from './types.js';
 

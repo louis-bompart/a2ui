@@ -16,7 +16,8 @@
 
 import {createComponentImplementation} from '@a2ui/react/v0_9';
 import z from 'zod';
-import {type ComponentApi, DynamicStringSchema, ChildListSchema} from '@a2ui/web_core/v0_9';
+import {type ComponentApi} from '@a2ui/web_core/v0_9';
+import {DynamicStringSchema, ChildListSchema} from '@a2ui/schema-zod3/v0_9';
 import './custom-grid.css';
 
 export const customGridApi = {

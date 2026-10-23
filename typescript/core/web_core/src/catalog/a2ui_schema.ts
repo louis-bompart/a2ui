@@ -15,7 +15,6 @@
  */
 
 import type {StandardJSONSchemaV1, StandardSchemaV1} from '@standard-schema/spec';
-import type {z} from 'zod';
 
 import {A2uiCatalogError} from '../errors.js';
 import {formatZodIssue, type ZodIssueLike} from '../processing/format-zod-issue.js';
@@ -121,46 +120,17 @@ export interface DeferredA2uiSchema extends A2uiSchema {
   resolveDeferredSchema(): A2uiSchema;
 }
 
-/** Returns the schema a deferred schema compiles to, or `schema` itself. */
-function resolvedSchema(schema: A2uiSchema): A2uiSchema {
+/**
+ * Returns the schema a deferred schema, such as the schema of an entry
+ * `Catalog.fromJson` loaded, compiles to, compiling it if it has not been
+ * yet, or `schema` itself for any other schema.
+ *
+ * @param schema The schema.
+ */
+export function resolveDeferredA2uiSchema(schema: A2uiSchema): A2uiSchema {
   let current = schema;
   while (typeof (current as Partial<DeferredA2uiSchema>).resolveDeferredSchema === 'function') {
     current = (current as DeferredA2uiSchema).resolveDeferredSchema();
   }
   return current;
-}
-
-/**
- * Returns the Zod 3 schema behind an `A2uiSchema`.
- *
- * Parts of web_core still read the structure of Zod 3 schemas to serialize
- * and bind components. Until they read the schema's JSON Schema instead, they
- * accept only Zod 3 schemas.
- *
- * @internal
- * @throws A2uiCatalogError when the schema is not a Zod 3 schema.
- */
-export function zodSchemaOf(model: A2uiSchema): z.ZodTypeAny {
-  const schema = resolvedSchema(model);
-  if (!isZod3Schema(schema)) {
-    throw new A2uiCatalogError(
-      `Schema from '${schema['~standard']?.vendor}' is not supported yet: only Zod 3 schemas are.`,
-    );
-  }
-  return schema as unknown as z.ZodTypeAny;
-}
-
-/**
- * Whether a schema is a Zod 3 schema, or a deferred schema that compiles to
- * one.
- *
- * Checked through the vendor name, a string that survives property renaming
- * by minifiers such as Closure Compiler. Zod 4 schemas, which have the same
- * vendor name, are told apart by their `_zod` internals.
- *
- * @internal
- */
-export function isZod3Schema(model: A2uiSchema): boolean {
-  const schema = resolvedSchema(model);
-  return schema['~standard']?.vendor === 'zod' && (schema as {_zod?: unknown})._zod === undefined;
 }

@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-import {Catalog, DynamicNumberSchema, DynamicStringSchema} from '@a2ui/web_core/v0_9';
+import {Catalog} from '@a2ui/web_core/v0_9';
+import {DynamicNumberSchema, DynamicStringSchema} from '@a2ui/schema-zod3/v0_9';
 import {BASIC_COMPONENTS, BASIC_FUNCTIONS} from '@a2ui/angular/v0_9';
 import {z} from 'zod';
 import {FileUploadComponent} from '../components/file-upload/file-upload';

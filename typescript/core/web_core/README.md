@@ -8,7 +8,8 @@ The `@a2ui/web_core` package provides state management, protocol parsing, and sc
 - **State Management**: Reactive data and component models using `@preact/signals-core`.
 - **DataContext**: Data binding, scoping, and function evaluation with dependency tracking.
 - **Catalog System**: Component and function catalogs supporting runtime validation and schema generation.
-- **Schema-Driven Code Generation**: Auto-generates Zod schemas and TypeScript component/function definitions directly from specification JSON schemas.
+- **Schema-Driven Code Generation**: Generates the TypeScript types of the protocol and of the basic catalogs directly from the specification's JSON schemas.
+- **Schema-Library Agnostic**: Catalog entries are typed as any [Standard Schema](https://standardschema.dev). web_core depends on no schema library: the schemas that validate protocol messages and the compiler that turns the catalogs loaded from JSON into schemas come from an installed schema library, such as [`@a2ui/schema-zod3`](../schema_zod3/README.md).
 
 ## Architecture
 
@@ -20,11 +21,11 @@ Protocol message schemas, common types, and catalog definitions are generated di
 
 ### Running Code Generation
 
-To regenerate all Zod schemas and catalog APIs:
+To regenerate the protocol types and catalog APIs:
 
 ```bash
-# Generate all protocol Zod schemas and versioned Basic Catalog APIs
-yarn generate-zod-schemas
+# Generate the protocol types and versioned Basic Catalog APIs
+yarn generate-schemas
 
 # Or run individual version generators directly
 node src/v0_9/scripts/generate-catalog.mjs
@@ -62,8 +63,8 @@ The code generator uses **Schema Flattening** to remain version-, catalog-, and 
 
 A `Catalog` has three serialization entry points:
 
-- `Catalog.fromJson(json, protocolVersion?, catalogId?)` loads a catalog document into the catalog's model. Each entry is a `JsonComponentApi` or `JsonFunctionApi` whose model is its JSON Schema definition as written (`jsonSchema`); its Zod `schema` is derived from the definition on first use. The catalog keeps the document-level fields (metadata, named `$defs`, other top-level keys). `protocolVersion`, when given, takes precedence over the version the document declares and selects the loading rules, while `toJson` still writes the document's own `protocolVersion`; without it the document's version applies, then `DEFAULT_PROTOCOL_VERSION`. `catalogId` replaces the document's own ID.
-- `catalog.toJson()` assembles the unbundled catalog document from the model, computing the `anyComponent` and `anyFunction` unions. A catalog loaded with `fromJson` returns its document unchanged (minus any entries omitted from the document's `anyComponent.oneOf` or `anyFunction.oneOf` unions, which `fromJson` filters out on load). An entry defined in code whose Zod schema is annotated with `spec()` has its definition computed from the model in the layout of the catalog's protocol version; any other entry defined in code is generated from its Zod schema. The result is computed once per catalog; each call returns a fresh copy.
+- `Catalog.fromJson(json, protocolVersion?, catalogId?)` loads a catalog document into the catalog's model. Each entry is a `JsonComponentApi` or `JsonFunctionApi` whose model is its JSON Schema definition as written (`jsonSchema`); its `schema` is compiled from the definition on first use, by the default catalog schema compiler (see [Schema libraries](#schema-libraries)). The catalog keeps the document-level fields (metadata, named `$defs`, other top-level keys). `protocolVersion`, when given, takes precedence over the version the document declares and selects the loading rules, while `toJson` still writes the document's own `protocolVersion`; without it the document's version applies, then `DEFAULT_PROTOCOL_VERSION`. `catalogId` replaces the document's own ID.
+- `catalog.toJson()` assembles the unbundled catalog document from the model, computing the `anyComponent` and `anyFunction` unions. A catalog loaded with `fromJson` returns its document unchanged (minus any entries omitted from the document's `anyComponent.oneOf` or `anyFunction.oneOf` unions, which `fromJson` filters out on load). An entry defined in code whose Zod 3 schema is annotated with `spec()` (from `@a2ui/schema-zod3`) has its definition computed from the model in the layout of the catalog's protocol version; any other entry defined in code is generated from the JSON Schema view of its schema. The result is computed once per catalog; each call returns a fresh copy.
 - `catalog.validationSchema` is the self-contained schema used to validate payloads: common types and the catalog's own `$defs` are bundled into `$defs` and every `$ref` is local. It is computed once per catalog; each read returns a fresh copy.
 
 ```ts
@@ -78,29 +79,29 @@ The `Catalog` constructor takes a `CatalogOptions` object as its fifth argument,
 
 ### Specification annotations
 
-`spec(schema, annotation)` returns a copy of a Zod schema that records what a catalog document writes about it beyond the schema itself, without changing validation: `mixins` (the common types, such as `'ComponentCommon'`, and the `specDef()` models a component's definition composes with `allOf`), `closure` (`additionalProperties` or `unevaluatedProperties`), `required` (the order of the `required` list), `allOf` (schemas that follow the schema's own, such as a format rule) and `keywords` (such as `format`). `specDef(name, schema)` names a model that the document declares under `$defs`. The descriptions come from `.describe()`, and common types references from `REF:#/$defs/<Name>` description markers.
+A Zod 3 schema can be annotated with `spec()` and `specDef()` from `@a2ui/schema-zod3` to record what a catalog document writes about it beyond the schema itself, such as the mixins a component's definition composes with `allOf`. See the [`@a2ui/schema-zod3` README](../schema_zod3/README.md#specification-annotations).
+
+The built-in basic catalogs are loaded from their published catalog documents instead. `scripts/generate-catalog-types.mjs`, run by `src/<version>/scripts/generate-catalog.mjs` as part of `yarn generate-schemas`, writes each document as a TypeScript constant (`basic_catalog_document.ts`), loads it with `Catalog.fromJson`, and writes a `<Name>Props` (or `<Name>Args`) interface derived from each entry's JSON Schema definition, with a typed `<Name>Api` that is the loaded entry. Each entry compiles its schema on first use, with the default catalog schema compiler, and `toJson` of each basic catalog writes its published document.
+
+## Schema libraries
+
+web_core reads every schema through [Standard Schema](https://standardschema.dev) (`~standard.validate`) and, to bind, serialize and inspect catalog entries, through its JSON Schema view: a schema implementing [Standard JSON Schema](https://standardschema.dev/json-schema), such as a Zod 4.2+ schema, is converted with its own converter. What needs a schema library of its own is provided by an installed `SchemaLibrary`:
+
+- the schemas that validate the messages of each protocol version (`ProtocolSchemas`), and those of a component's `accessibility` and `metadata` envelope properties;
+- the `CatalogSchemaCompiler` that `Catalog.fromJson`, and so the basic catalogs, use by default;
+- the conversion to JSON Schema of the library's schemas that implement no Standard JSON Schema, such as Zod 3 schemas.
+
+`@a2ui/schema-zod3` installs the Zod 3 library when imported, and the Angular, Lit and React renderers import it. Without an installed library, messages are not validated against the protocol schemas, and compiling the schema of an entry loaded with `Catalog.fromJson` throws unless a compiler is given (`Catalog.fromJson(json, version, id, {schemaCompiler})` or `setDefaultCatalogSchemaCompiler`).
 
 ```ts
-import {Catalog, spec, specDef} from '@a2ui/web_core/catalog';
-import {z} from 'zod';
+import '@a2ui/schema-zod3';
+import {MessageProcessor} from '@a2ui/web_core/v0_9';
+import {basicCatalog} from '@a2ui/web_core/v0_9/basic_catalog';
 
-const Common = specDef('Common', z.object({weight: z.number().optional()}));
-const Badge = {
-  name: 'Badge',
-  schema: spec(
-    z
-      .object({...Common.shape, label: z.string()})
-      .describe('A badge.')
-      .strict(),
-    {mixins: ['ComponentCommon', Common]},
-  ),
-};
-// Badge's definition composes ComponentCommon and #/$defs/Common with allOf,
-// and $defs.Common is computed from the Common model.
-const document = new Catalog('https://example.com/badges', '0.9', [Badge]).toJson();
+const processor = new MessageProcessor([basicCatalog]);
 ```
 
-The built-in basic catalogs are loaded from their published catalog documents instead. `scripts/generate-catalog-types.mjs`, run by `src/<version>/scripts/generate-catalog.mjs` as part of `yarn generate-zod-schemas`, writes each document as a TypeScript constant (`basic_catalog_document.ts`), loads it with `Catalog.fromJson`, and writes a `<Name>Props` (or `<Name>Args`) interface derived from each entry's JSON Schema definition, with a typed `<Name>Api` that is the loaded entry. Each entry compiles its schema on first use, with the default catalog schema compiler, and `toJson` of each basic catalog writes its published document.
+A library is written against `@a2ui/web_core/schema-library`, which exports `installSchemaLibrary`, the `SchemaLibrary` and `CatalogSchemaCompiler` interfaces, and the helpers a compiler uses to read catalog documents.
 
 ## Development
 

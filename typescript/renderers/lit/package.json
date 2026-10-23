@@ -70,7 +70,7 @@
       ]
     },
     "test:unit": {
-      "command": "node --test --enable-source-maps --test-reporter spec dist/src/0.8/*.test.js dist/src/tests/**/*.test.js",
+      "command": "node --import @a2ui/schema-zod3 --test --enable-source-maps --test-reporter spec dist/src/0.8/*.test.js dist/src/tests/**/*.test.js",
       "dependencies": [
         "build"
       ]
@@ -86,7 +86,8 @@
     "build:tsc": {
       "command": "tsc -b --pretty",
       "dependencies": [
-        "../../core/web_core:build"
+        "../../core/web_core:build",
+        "../../core/schema_zod3:build"
       ],
       "env": {
         "FORCE_COLOR": "1"
@@ -129,6 +130,7 @@
     }
   },
   "dependencies": {
+    "@a2ui/schema-zod3": "workspace:*",
     "@a2ui/web_core": "workspace:*",
     "@lit-labs/signals": "^0.3.0",
     "@lit/context": "^1.1.6",

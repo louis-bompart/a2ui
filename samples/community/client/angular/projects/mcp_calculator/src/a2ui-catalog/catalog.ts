@@ -14,13 +14,8 @@
  * limitations under the License.
  */
 
-import {
-  Catalog,
-  DynamicNumberSchema,
-  DynamicStringSchema,
-  DynamicValueSchema,
-  createFunctionImplementation,
-} from '@a2ui/web_core/v0_9';
+import {Catalog, createFunctionImplementation} from '@a2ui/web_core/v0_9';
+import {DynamicNumberSchema, DynamicStringSchema, DynamicValueSchema} from '@a2ui/schema-zod3/v0_9';
 import {z} from 'zod';
 import {McpApp} from './mcp-app';
 import {PongScoreBoard} from './pong-scoreboard';

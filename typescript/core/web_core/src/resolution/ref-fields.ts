@@ -25,7 +25,7 @@ import {
   unionBranches,
 } from '../catalog/a2ui_json_schema.js';
 import type {A2uiSchema} from '../catalog/a2ui_schema.js';
-import type {JsonSchemaObject} from '../catalog/spec_annotations.js';
+import type {JsonSchemaObject} from '../catalog/json_schema.js';
 
 /**
  * Classification reads the JSON Schema view of a component's schema, in

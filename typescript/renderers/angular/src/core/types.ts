@@ -16,12 +16,8 @@
 
 import { Signal } from '@angular/core';
 import { z } from 'zod';
-import {
-  ComponentApi,
-  DataBindingSchema,
-  FunctionCallSchema,
-  InferredComponentApiSchemaType,
-} from '@a2ui/web_core/v0_9';
+import { ComponentApi, InferredComponentApiSchemaType } from '@a2ui/web_core/v0_9';
+import { DataBindingSchema, FunctionCallSchema } from '@a2ui/schema-zod3/v0_9';
 import { Child } from './component-binder.service';
 
 /** Data structure that represents a template used to render a collection of children. */

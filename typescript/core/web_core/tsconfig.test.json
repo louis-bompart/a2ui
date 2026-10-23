@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "composite": false,
+    "tsBuildInfoFile": "dist/.tsbuildinfo.test",
+    "paths": {
+      "@a2ui/web_core": ["./src/index.ts"],
+      "@a2ui/web_core/catalog": ["./src/catalog/index.ts"],
+      "@a2ui/web_core/schema-library": ["./src/catalog/schema_library_api.ts"],
+      "@a2ui/web_core/state": ["./src/state/index.ts"],
+      "@a2ui/web_core/processing": ["./src/processing/index.ts"],
+      "@a2ui/web_core/resolution": ["./src/resolution/index.ts"],
+      "@a2ui/web_core/rendering": ["./src/resolution/index.ts"],
+      "@a2ui/web_core/validation": ["./src/validation/index.ts"],
+      "@a2ui/web_core/validating": ["./src/validation/integrity-checker.ts"],
+      "@a2ui/web_core/reactivity": ["./src/reactivity/index.ts"],
+      "@a2ui/web_core/expressions": ["./src/expressions/index.ts"],
+      "@a2ui/web_core/adapters": ["./src/processing/adapters/index.ts"],
+      "@a2ui/web_core/rpc": ["./src/rpc/index.ts"],
+      "@a2ui/web_core/errors": ["./src/errors.ts"],
+      "@a2ui/web_core/events": ["./src/common/events.ts"],
+      "@a2ui/web_core/semver": ["./src/common/semver.ts"],
+      "@a2ui/web_core/v0_8": ["./src/v0_8/index.ts"],
+      "@a2ui/web_core/v0_8/basic_catalog": ["./src/v0_8/basic_catalog/index.ts"],
+      "@a2ui/web_core/v0_9": ["./src/v0_9/index.ts"],
+      "@a2ui/web_core/v0_9/universal": ["./src/v0_9/universal/index.ts"],
+      "@a2ui/web_core/v0_9/basic_catalog": ["./src/v0_9/basic_catalog/index.ts"],
+      "@a2ui/web_core/v1_0": ["./src/v1_0/index.ts"],
+      "@a2ui/web_core/catalogs/basic/v1": ["./src/catalogs/basic/v1/index.ts"],
+      "@a2ui/web_core/universal": ["./src/universal/index.ts"]
+    }
+  },
+  "include": ["src/**/*.ts", "src/**/*.json", "tests/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}

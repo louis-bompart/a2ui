@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+// Installs the Zod 3 schema library, which validates the A2UI messages and
+// compiles the schemas of the catalogs loaded from JSON.
+import '@a2ui/schema-zod3';
+
 // Core Services and Components
 export {
   A2UI_RENDERER_CONFIG,
@@ -21,18 +25,22 @@ export {
   provideA2Ui,
   type RendererConfiguration,
 } from './core/a2ui-renderer.service';
-export {ComponentHostComponent} from './core/component-host.component';
-export {SurfaceComponent} from './core/surface.component';
-export {CatalogComponent} from './core/catalog_component';
-export {ComponentBinder, type Child} from './core/component-binder.service';
+export { ComponentHostComponent } from './core/component-host.component';
+export { SurfaceComponent } from './core/surface.component';
+export { CatalogComponent } from './core/catalog_component';
+export { ComponentBinder, type Child } from './core/component-binder.service';
 export {
   type BoundProperty,
   type ComponentApiToProps,
   type ComponentTemplate,
   type ExtendedProps,
 } from './core/types';
-export {getNormalizedPath} from './core/utils';
-export {DefaultMarkdownRenderer, MarkdownRenderer, provideMarkdownRenderer} from './core/markdown';
+export { getNormalizedPath } from './core/utils';
+export {
+  DefaultMarkdownRenderer,
+  MarkdownRenderer,
+  provideMarkdownRenderer,
+} from './core/markdown';
 
 // Catalog Types and Web Component utilities
 export {
@@ -41,8 +49,8 @@ export {
   type AnyDuringSchemaAlignment,
   createComponentImplementation,
 } from './catalog/types';
-export {toWebComponent} from './catalog/to_web_component';
-export {UniversalOnlyComponent} from './catalog/universal_only.component';
+export { toWebComponent } from './catalog/to_web_component';
+export { UniversalOnlyComponent } from './catalog/universal_only.component';
 
 // Providers and v1.0 BasicCatalog
 export {

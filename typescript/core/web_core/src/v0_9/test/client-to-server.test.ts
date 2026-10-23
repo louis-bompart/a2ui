@@ -16,10 +16,7 @@
 
 import {describe, it} from 'node:test';
 import * as assert from 'node:assert';
-import {
-  A2uiClientMessageSchema,
-  A2uiClientDataModelSchema,
-} from '../schema/zod/client-to-server.js';
+import {A2uiClientMessageSchema, A2uiClientDataModelSchema} from '@a2ui/schema-zod3/v0_9';
 
 describe('Client-to-Server Schema Verification', () => {
   const versions = ['v0.9', 'v0.9.1'];

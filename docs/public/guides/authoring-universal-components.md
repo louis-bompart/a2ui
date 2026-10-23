@@ -12,27 +12,24 @@ Creating and using a universal component involves three steps:
 
 This guide uses [Lit](https://lit.dev) (`A2uiLitElement`), the recommended way to build universal components. You can also use standard Web Components without Lit; see [Writing a component without Lit](#writing-a-component-without-lit).
 
-Install `@a2ui/web_core`, `lit`, and `zod` alongside the renderer package for your host framework (`@a2ui/angular`, `@a2ui/react`, or `@a2ui/lit`):
+Install `@a2ui/web_core`, `@a2ui/schema-zod3`, `lit`, and `zod` alongside the renderer package for your host framework (`@a2ui/angular`, `@a2ui/react`, or `@a2ui/lit`):
 
 ```bash
-npm install @a2ui/web_core lit zod
+npm install @a2ui/web_core @a2ui/schema-zod3 lit zod
 ```
 
 ---
 
 ## 1. Define the component schema
 
-Create an API definition with the component name and a Zod schema describing its properties. Use schemas from `@a2ui/web_core/v0_9` for values that the agent can bind to data model paths or actions.
+Create an API definition with the component name and a Zod schema describing its properties. Use the Zod 3 schemas from `@a2ui/schema-zod3/v0_9` for values that the agent can bind to data model paths or actions.
 
 ```typescript
 // stat-card.api.ts
 import {z} from 'zod';
-import {
-  type ComponentApi,
-  DynamicStringSchema,
-  ChildListSchema,
-  ActionSchema,
-} from '@a2ui/web_core/v0_9';
+
+import {ActionSchema, ChildListSchema, DynamicStringSchema} from '@a2ui/schema-zod3/v0_9';
+import {type ComponentApi} from '@a2ui/web_core/v0_9';
 
 export const StatCardApi = {
   name: 'StatCard',

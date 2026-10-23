@@ -30,13 +30,8 @@ import {describe, it, expect, afterEach, vi} from 'vitest';
 import {act, fireEvent, render, waitFor, within} from '@testing-library/react';
 import React, {createContext, useContext, useLayoutEffect, useRef} from 'react';
 import {z} from 'zod';
-import {
-  Catalog,
-  CommonSchemas,
-  ComponentIdSchema,
-  ComponentModel,
-  SurfaceModel,
-} from '@a2ui/web_core/v0_9';
+import {Catalog, ComponentModel, SurfaceModel} from '@a2ui/web_core/v0_9';
+import {CommonSchemas, ComponentIdSchema} from '@a2ui/schema-zod3/v0_9';
 import type {A2uiWebComponentElement} from '@a2ui/web_core/v0_9/universal';
 import {basicCatalog as webCoreBasicCatalog} from '@a2ui/web_core/v0_9/basic_catalog';
 import {

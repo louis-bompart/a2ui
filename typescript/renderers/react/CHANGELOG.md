@@ -1,5 +1,6 @@
 ## Unreleased
 
+- Import `@a2ui/schema-zod3`, the Zod 3 schema library `@a2ui/web_core` no longer bundles, so messages are still validated and the basic catalogs still compile ([#2160](https://github.com/a2ui-project/a2ui/issues/2160)).
 - `ReactComponentImplementation`, `ReactCatalogComponent` and `toWebComponent` take an `A2uiSchema` (any Standard Schema) as their `Schema` type parameter instead of a Zod `ZodTypeAny`.
 
 ## 0.14.0

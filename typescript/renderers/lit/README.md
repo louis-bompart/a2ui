@@ -87,7 +87,7 @@ Use Zod to define the properties.
 
 ```typescript
 import {z} from 'zod';
-import {CommonSchemas} from '@a2ui/web_core/v0_9';
+import {CommonSchemas} from '@a2ui/schema-zod3/v0_9';
 
 export const MyProfileApi = {
   name: 'Profile',

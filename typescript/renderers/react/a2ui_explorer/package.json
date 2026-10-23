@@ -91,6 +91,7 @@
   "dependencies": {
     "@a2ui/markdown-it": "workspace:*",
     "@a2ui/react": "workspace:*",
+    "@a2ui/schema-zod3": "workspace:*",
     "@a2ui/web_core": "workspace:*",
     "react": "^19.2.7",
     "react-dom": "^19.2.7"

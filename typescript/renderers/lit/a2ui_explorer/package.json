@@ -37,6 +37,7 @@
       "dependencies": [
         "generate:examples",
         "../../../core/web_core:build",
+        "../../../core/schema_zod3:build",
         "../../markdown-it:build",
         "../:build"
       ]
@@ -66,6 +67,7 @@
   "dependencies": {
     "@a2ui/lit": "workspace:*",
     "@a2ui/markdown-it": "workspace:*",
+    "@a2ui/schema-zod3": "workspace:*",
     "@a2ui/web_core": "workspace:*",
     "@lit-labs/signals": "^0.3.0",
     "@lit/context": "^1.1.6",

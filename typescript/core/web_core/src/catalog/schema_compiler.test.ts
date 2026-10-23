@@ -27,7 +27,7 @@ import {
   type CatalogSchemaCompiler,
   type CatalogSchemaContext,
 } from './schema_compiler.js';
-import type {JsonSchemaObject} from './spec_annotations.js';
+import type {JsonSchemaObject} from './json_schema.js';
 import {Catalog} from './types.js';
 import {zod3CatalogSchemaCompiler} from './zod3_catalog_compiler.js';
 

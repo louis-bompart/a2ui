@@ -25,10 +25,10 @@ import {MessageProcessor} from '../processing/message-processor.js';
 import {getKnownSchemaKeys} from '../resolution/data-context.js';
 import {scrapeSchemaBehavior} from '../resolution/generic-binder.js';
 import {extractRefFields} from '../resolution/ref-fields.js';
-import {ChildListSchema, ComponentIdSchema} from '../types/zod/common-types.js';
+import {ChildListSchema, ComponentIdSchema} from '@a2ui/schema-zod3';
 import {a2uiJsonSchemaOf} from './a2ui_json_schema.js';
 import type {A2uiSchema, StandardJSONSchemaV1} from './a2ui_schema.js';
-import {exclusiveUnion} from './exclusive_union.js';
+import {exclusiveUnion} from '@a2ui/schema-zod3';
 import {basicCatalog} from '../catalogs/basic/v1/index.js';
 import {Catalog, type ComponentApi} from './types.js';
 

@@ -16,9 +16,8 @@
 
 import type {A2uiSchema} from './a2ui_schema.js';
 import type {CatalogSchemaCompiler} from './schema_compiler.js';
-import type {JsonSchemaObject} from './spec_annotations.js';
+import type {JsonSchemaObject} from './json_schema.js';
 import type {ComponentApi, FunctionApi} from './types.js';
-import {zod3SchemaLibrary} from './zod3_schema_library.js';
 
 /**
  * The schemas that validate the messages of each protocol version, by
@@ -137,12 +136,9 @@ export function uninstallSchemaLibrary(library: SchemaLibrary): void {
   installed = installed.filter(other => other !== library);
 }
 
-/**
- * Returns the installed schema libraries, most recently installed first, then
- * the built-in Zod 3 library.
- */
+/** Returns the installed schema libraries, most recently installed first. */
 export function schemaLibraries(): readonly SchemaLibrary[] {
-  return [...installed, zod3SchemaLibrary()];
+  return installed;
 }
 
 /**

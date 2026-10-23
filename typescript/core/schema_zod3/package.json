@@ -1,0 +1,142 @@
+{
+  "name": "@a2ui/schema-zod3",
+  "version": "0.1.0",
+  "description": "Zod 3 schema library for A2UI: Zod 3 schemas of the protocol, the Zod 3 catalog schema compiler, and the Zod 3 support of @a2ui/web_core.",
+  "homepage": "https://a2ui.org/",
+  "repository": {
+    "directory": "typescript/core/schema_zod3",
+    "type": "git",
+    "url": "git+https://github.com/a2ui-project/a2ui.git"
+  },
+  "bugs": {
+    "url": "https://github.com/a2ui-project/a2ui/issues"
+  },
+  "keywords": [
+    "a2ui",
+    "zod",
+    "schema",
+    "ai",
+    "agent",
+    "ui"
+  ],
+  "license": "Apache-2.0",
+  "author": "Google",
+  "type": "module",
+  "sideEffects": [
+    "./dist/src/install.js",
+    "./dist/src/index.js",
+    "./dist/src/v0_8/index.js",
+    "./dist/src/v0_9/index.js",
+    "./dist/src/v1_0/index.js"
+  ],
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "default": "./dist/src/index.js"
+    },
+    "./v0_8": {
+      "types": "./dist/src/v0_8/index.d.ts",
+      "default": "./dist/src/v0_8/index.js"
+    },
+    "./v0_9": {
+      "types": "./dist/src/v0_9/index.d.ts",
+      "default": "./dist/src/v0_9/index.js"
+    },
+    "./v1_0": {
+      "types": "./dist/src/v1_0/index.d.ts",
+      "default": "./dist/src/v1_0/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "prepublishOnly": "node -e \"if(!process.cwd().endsWith('dist')) { console.error('Error: This package must be published from the dist/ directory. Run `yarn build` then `cd dist && yarn npm publish`'); process.exit(1); }\"",
+    "publish:package": "yarn build && node ../../scripts/prepare-publish.mjs && cd dist && touch yarn.lock && yarn install && yarn npm publish --access public",
+    "generate-zod-schemas": "wireit",
+    "build": "wireit",
+    "build:tsc": "wireit",
+    "test": "wireit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "clean": "wireit"
+  },
+  "wireit": {
+    "generate-zod-schemas": {
+      "command": "node scripts/generate-zod-schemas.mjs && node scripts/generate-superset-common-types.mjs && prettier --write \"src/**/*.ts\"",
+      "files": [
+        "../../../specification/v0_9/json/*.json",
+        "../../../specification/v1_0/json/*.json",
+        "scripts/*.mjs",
+        "../web_core/scripts/schema-merge.mjs",
+        "src/v0_9/helpers.ts",
+        "src/v1_0/helpers.ts",
+        "src/common/child-ref-helpers.ts"
+      ],
+      "output": [
+        "src/common/common-types.ts",
+        "src/v0_9/common-types.ts",
+        "src/v0_9/server-to-client.ts",
+        "src/v0_9/client-to-server.ts",
+        "src/v0_9/client-capabilities.ts",
+        "src/v0_9/index.ts",
+        "src/v1_0/common-types.ts",
+        "src/v1_0/agent-to-renderer.ts",
+        "src/v1_0/renderer-to-agent.ts",
+        "src/v1_0/renderer-capabilities.ts",
+        "src/v1_0/catalog-definition.ts",
+        "src/v1_0/index.ts"
+      ]
+    },
+    "build": {
+      "dependencies": [
+        "build:tsc"
+      ]
+    },
+    "build:tsc": {
+      "command": "tsc -b --pretty",
+      "dependencies": [
+        "../web_core:build",
+        "generate-zod-schemas"
+      ],
+      "files": [
+        "src/**/*.ts",
+        "tsconfig.json"
+      ],
+      "output": [
+        "dist/"
+      ],
+      "clean": "if-file-deleted"
+    },
+    "test": {
+      "command": "node --test \"dist/**/*.test.js\" \"scripts/*.test.mjs\"",
+      "dependencies": [
+        "build"
+      ]
+    },
+    "clean": {
+      "command": "rm -rf dist .wireit"
+    }
+  },
+  "dependencies": {
+    "zod": "^3.25.76",
+    "zod-to-json-schema": "^3.25.2"
+  },
+  "peerDependencies": {
+    "@a2ui/web_core": "workspace:*"
+  },
+  "devDependencies": {
+    "@a2ui/web_core": "workspace:*",
+    "@types/node": "^25.9.3",
+    "eslint": "^10.4.1",
+    "json-schema-to-zod": "^2.8.1",
+    "prettier": "^3.8.4",
+    "typescript": "5.9.3",
+    "wireit": "^0.15.0-pre.2"
+  }
+}

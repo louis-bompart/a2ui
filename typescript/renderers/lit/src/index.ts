@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+// Installs the Zod 3 schema library, which validates the A2UI messages and
+// compiles the schemas of the catalogs loaded from JSON.
+import '@a2ui/schema-zod3';
+
 export type {LitComponentApi} from './types.js';
 export {A2uiSurface} from './surface/a2ui-surface.js';
 export {renderA2uiNode} from './surface/render-a2ui-node.js';

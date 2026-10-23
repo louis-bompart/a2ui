@@ -39,7 +39,7 @@ import {
   ChildListSchema,
   ComponentIdSchema,
   DynamicStringSchema,
-} from '../v0_9/schema/zod/common-types.js';
+} from '@a2ui/schema-zod3/v0_9';
 import {effect, getValue, peekValue, Signal} from '../reactivity/signals.js';
 import {ComponentNode, NodeProps, PLACEHOLDER_TYPE, isComponentNode} from './component-node.js';
 import {NodeResolver} from './node-resolver.js';

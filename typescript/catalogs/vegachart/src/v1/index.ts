@@ -22,13 +22,9 @@
 
 import {z} from 'zod';
 
-import {
-  Catalog,
-  type ComponentApi,
-  DynamicNumberSchema,
-  DynamicValueSchema,
-  spec,
-} from '@a2ui/web_core/v1_0';
+import {Catalog, type ComponentApi} from '@a2ui/web_core/v1_0';
+import {DynamicNumberSchema, DynamicValueSchema} from '@a2ui/schema-zod3/v1_0';
+import {spec} from '@a2ui/schema-zod3';
 
 import {A2uiVegaChartElement} from '../components/vegaChart.js';
 

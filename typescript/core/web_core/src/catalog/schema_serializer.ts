@@ -24,7 +24,7 @@ import {
   type CatalogDocumentContext,
   type CatalogDocumentShaper,
 } from './schema_library.js';
-import type {JsonSchemaObject} from './spec_annotations.js';
+import type {JsonSchemaObject} from './json_schema.js';
 import {DEFAULT_COMMON_TYPES_URI} from './standard_defs.js';
 import type {CatalogUnions, ComponentApi, FunctionApi} from './types.js';
 

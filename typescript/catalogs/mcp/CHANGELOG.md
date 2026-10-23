@@ -1,5 +1,6 @@
 ## Unreleased
 
+- Import `DynamicStringSchema` and `DynamicValueSchema` from `@a2ui/schema-zod3/v0_9`, a new peer dependency, instead of `@a2ui/web_core`, which no longer depends on Zod ([#2160](https://github.com/a2ui-project/a2ui/issues/2160)).
 - The published package contains only the runtime build output; test files and TypeScript build info are no longer included. [#3348](https://github.com/a2ui-project/a2ui/pull/3348)
 
 ## 0.0.1-alpha.1

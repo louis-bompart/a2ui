@@ -22,7 +22,7 @@ import type {
   StandardJSONSchemaV1,
   StandardSchemaV1,
 } from './a2ui_schema.js';
-import type {JsonSchemaObject} from './spec_annotations.js';
+import type {JsonSchemaObject} from './json_schema.js';
 
 /**
  * The JSON Schema definitions of the entries `Catalog.fromJson` loaded, by

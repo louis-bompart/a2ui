@@ -92,6 +92,7 @@
   },
   "dependencies": {
     "@a2ui/markdown-it": "workspace:*",
+    "@a2ui/schema-zod3": "workspace:*",
     "@a2ui/web_core": "workspace:*",
     "clsx": "^2.1.1",
     "markdown-it": "^14.2.0",
@@ -140,6 +141,7 @@
       "command": "tsup && node scripts/postbuild.mjs",
       "dependencies": [
         "../../core/web_core:build",
+        "../../core/schema_zod3:build",
         "../markdown-it:build"
       ],
       "files": [

@@ -20,15 +20,13 @@ import {render, screen, act, fireEvent, within} from '@testing-library/react';
 import {z} from 'zod';
 import {
   Catalog,
-  CommonSchemas,
   ComponentModel,
   NodeResolver,
   SurfaceModel,
-  ChildListSchema,
-  ComponentIdSchema,
   getValue,
   type A2uiClientAction,
 } from '@a2ui/web_core/v0_9';
+import {CommonSchemas, ChildListSchema, ComponentIdSchema} from '@a2ui/schema-zod3/v0_9';
 import {
   createComponentImplementation,
   type ReactCatalogComponent,

@@ -25,7 +25,7 @@ import {
   unionBranches,
 } from '../catalog/a2ui_json_schema.js';
 import type {A2uiSchema} from '../catalog/a2ui_schema.js';
-import type {JsonSchemaObject} from '../catalog/spec_annotations.js';
+import type {JsonSchemaObject} from '../catalog/json_schema.js';
 import {V10_STANDARD_DEFS} from '../v1_0/standard_defs.js';
 import {ComponentContext} from './component-context.js';
 import type {Action, ChildList, DataBinding, FunctionCall} from '../types/common-types.js';

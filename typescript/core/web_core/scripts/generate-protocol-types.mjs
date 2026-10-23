@@ -19,7 +19,7 @@ import {join, posix} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
 import {TypeWriter} from './generate-catalog-types.mjs';
-import {deepMergeSchemas, inlineAllOfRefs} from './generate-superset-common-types.mjs';
+import {deepMergeSchemas, inlineAllOfRefs} from './schema-merge.mjs';
 
 /**
  * @fileoverview Generates the TypeScript types of the A2UI protocol from the
@@ -228,7 +228,6 @@ export function generateV09Types() {
     specDir,
     outDir: join(ROOT, 'src', 'v0_9', 'schema'),
     index: true,
-    indexExtras: ['zod/index'],
     constTypes: {'v0.9': "'v0.9' | 'v0.9.1'"},
     modules: [
       {
@@ -346,7 +345,6 @@ export function generateV10Types() {
     specDir,
     outDir: join(ROOT, 'src', 'v1_0', 'schema'),
     index: true,
-    indexExtras: ['zod/index'],
     modules: [
       {
         module: 'common-types',

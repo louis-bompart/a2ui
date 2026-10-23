@@ -32,7 +32,7 @@ import {
   unionBranches,
 } from '../catalog/a2ui_json_schema.js';
 import type {A2uiSchema} from '../catalog/a2ui_schema.js';
-import type {JsonSchemaObject} from '../catalog/spec_annotations.js';
+import type {JsonSchemaObject} from '../catalog/json_schema.js';
 import {DataModel, DataSubscription} from '../state/data-model.js';
 import {type FunctionCall, type Action} from '../types/common-types.js';
 import {MAX_FUNCTION_CALL_ARGS} from '../types/limits.js';

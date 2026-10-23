@@ -20,16 +20,15 @@
  */
 
 import {
-  AccessibilityAttributesSchema,
   Catalog,
   ComponentContext,
-  DynamicNumberSchema,
   MessageProcessor,
   renderA2uiNode,
   type ComponentApi,
   type SurfaceModel,
   type WebComponentImplementation,
 } from '@a2ui/web_core/v1_0';
+import {AccessibilityAttributesSchema, DynamicNumberSchema} from '@a2ui/schema-zod3/v1_0';
 import {render} from 'lit';
 import {z} from 'zod';
 import type {SandboxProtocol, SandboxResource} from './sandbox_bootstrap.js';

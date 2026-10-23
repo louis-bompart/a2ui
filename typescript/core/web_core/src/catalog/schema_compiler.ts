@@ -18,7 +18,7 @@ import {A2uiCatalogError} from '../errors.js';
 import type {A2uiSchema} from './a2ui_schema.js';
 import {schemaLibraryPart} from './schema_library.js';
 import type {PeerCatalogSource} from './schema_loader.js';
-import type {JsonSchemaObject} from './spec_annotations.js';
+import type {JsonSchemaObject} from './json_schema.js';
 
 /** What a `CatalogSchemaCompiler` compiles a definition of a catalog document against. */
 export interface CatalogSchemaContext {

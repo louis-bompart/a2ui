@@ -17,7 +17,8 @@ The universal component submodule provides primitives for creating A2UI componen
 import {html, css, nothing} from 'lit';
 import {customElement} from 'lit/decorators.js';
 import {z} from 'zod';
-import {type ComponentApi, DynamicStringSchema} from '@a2ui/web_core/v0_9';
+import {DynamicStringSchema} from '@a2ui/schema-zod3/v0_9';
+import {type ComponentApi} from '@a2ui/web_core/v0_9';
 import {A2uiLitElement, type WebComponentImplementation} from '@a2ui/web_core/v0_9/universal';
 
 export const MyBadgeApi = {

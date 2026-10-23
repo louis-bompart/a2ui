@@ -18,7 +18,8 @@ import {html, css, nothing} from 'lit';
 import {customElement} from 'lit/decorators.js';
 import {z} from 'zod';
 import {A2uiLitElement} from '@a2ui/lit/v0_9';
-import {ComponentApi, DynamicStringSchema, DynamicNumberSchema} from '@a2ui/web_core/v0_9';
+import {ComponentApi} from '@a2ui/web_core/v0_9';
+import {DynamicStringSchema, DynamicNumberSchema} from '@a2ui/schema-zod3/v0_9';
 import {WebComponentImplementation} from '@a2ui/web_core/v0_9/universal';
 
 export const customSliderApi = {

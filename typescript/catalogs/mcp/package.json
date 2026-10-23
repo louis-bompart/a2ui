@@ -92,6 +92,7 @@
       "command": "tsc -b --pretty",
       "dependencies": [
         "../../../typescript/core/web_core:build",
+        "../../../typescript/core/schema_zod3:build",
         "copy-catalog",
         "copy-shared"
       ],
@@ -176,6 +177,7 @@
       "command": "eslint .",
       "dependencies": [
         "../../../typescript/core/web_core:build",
+        "../../../typescript/core/schema_zod3:build",
         "build:tsc"
       ],
       "files": [
@@ -203,10 +205,12 @@
     "zod": "^3.25.76"
   },
   "peerDependencies": {
+    "@a2ui/schema-zod3": "workspace:*",
     "@a2ui/web_core": "workspace:*",
     "lit": "^3.3.3"
   },
   "devDependencies": {
+    "@a2ui/schema-zod3": "workspace:*",
     "@a2ui/web_core": "workspace:*",
     "@types/jasmine": "^6.0.0",
     "@types/node": "^25.9.3",

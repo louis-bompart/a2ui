@@ -34,7 +34,7 @@ import {
   parseCatalogSchema,
 } from './schema_loader.js';
 import {defaultCatalogSchemaCompiler, type CatalogSchemaCompiler} from './schema_compiler.js';
-import type {JsonSchemaObject} from './spec_annotations.js';
+import type {JsonSchemaObject} from './json_schema.js';
 import {generateValidationSchema} from './schema_generator.js';
 import {
   deepCopyJson,

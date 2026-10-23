@@ -20,8 +20,6 @@ import React, {useState} from 'react';
 import {z} from 'zod';
 import {
   Catalog,
-  ChildListSchema,
-  CommonSchemas,
   ComponentModel,
   type ComponentNode,
   NodeResolver,
@@ -30,6 +28,7 @@ import {
   isComponentNode,
   peekValue,
 } from '@a2ui/web_core/v0_9';
+import {ChildListSchema, CommonSchemas} from '@a2ui/schema-zod3/v0_9';
 import {
   registerUniversalElement,
   type WebComponentImplementation,

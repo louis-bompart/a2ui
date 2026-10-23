@@ -83,7 +83,8 @@
       "command": "tsc -b --pretty",
       "dependencies": [
         "copy-catalog",
-        "../../core/web_core:build"
+        "../../core/web_core:build",
+        "../../core/schema_zod3:build"
       ],
       "files": [
         "src/**/*.ts",
@@ -136,6 +137,7 @@
     "wireit": "^0.15.0-pre.2"
   },
   "dependencies": {
+    "@a2ui/schema-zod3": "workspace:*",
     "@a2ui/web_core": "workspace:*",
     "lit": "^3.3.3",
     "vega": "^5.30.0",

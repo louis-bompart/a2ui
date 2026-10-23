@@ -23,4 +23,3 @@ export * from './renderer-to-agent.js';
 export * from './renderer-capabilities.js';
 export * from './catalog-definition.js';
 export * from './helpers.js';
-export * from './zod/index.js';
