@@ -142,7 +142,10 @@ export function generateProtocolTypes(group) {
   const docs = new Map();
   const load = file => {
     if (!docs.has(file)) {
-      docs.set(file, group.docs?.[file] ?? JSON.parse(readFileSync(join(group.specDir, file), 'utf-8')));
+      docs.set(
+        file,
+        group.docs?.[file] ?? JSON.parse(readFileSync(join(group.specDir, file), 'utf-8')),
+      );
     }
     return docs.get(file);
   };
@@ -244,7 +247,11 @@ export function generateV09Types() {
       {
         module: 'server-to-client',
         types: [
-          ...messages.map(name => ({name, file: 'server_to_client.json', pointer: `#/$defs/${name}`})),
+          ...messages.map(name => ({
+            name,
+            file: 'server_to_client.json',
+            pointer: `#/$defs/${name}`,
+          })),
           {name: 'A2uiMessage', ts: messages.join(' | '), description: s2c.description},
           {name: 'A2uiMessageList', ts: 'A2uiMessage[]', description: 'A list of messages.'},
           {
@@ -305,7 +312,8 @@ export function generateV09Types() {
             name: 'TemplateChildList',
             ts: '{\n  componentId: ComponentId;\n  path: string;\n}',
             uses: ['ComponentId'],
-            description: 'A template for generating a dynamic list of children from a data model list.',
+            description:
+              'A template for generating a dynamic list of children from a data model list.',
           },
           {
             name: 'AnyComponent',
@@ -377,7 +385,11 @@ export function generateV10Types() {
       {
         module: 'agent-to-renderer',
         types: [
-          ...messages.map(name => ({name, file: 'agent_to_renderer.json', pointer: `#/$defs/${name}`})),
+          ...messages.map(name => ({
+            name,
+            file: 'agent_to_renderer.json',
+            pointer: `#/$defs/${name}`,
+          })),
           {name: 'AgentToRendererMessage', ts: messages.join(' | '), description: a2r.description},
         ],
       },
@@ -469,7 +481,9 @@ export function generateSupersetTypes() {
   const merged = {$defs: {}};
   for (const name of names) {
     merged.$defs[name] = deepMergeSchemas(
-      versions.filter(doc => doc.$defs[name]).map(doc => inlineAllOfRefs(doc.$defs[name], doc.$defs)),
+      versions
+        .filter(doc => doc.$defs[name])
+        .map(doc => inlineAllOfRefs(doc.$defs[name], doc.$defs)),
     );
   }
   const description = name => merged.$defs[name].description;
@@ -483,7 +497,10 @@ export function generateSupersetTypes() {
         types: [
           ...defs('common_types.json', merged, {
             Child: {ts: 'ComponentId', description: description('Child')},
-            DataBinding: {ts: "{\n  path?: string;\n  '@path'?: string;\n}", description: description('DataBinding')},
+            DataBinding: {
+              ts: "{\n  path?: string;\n  '@path'?: string;\n}",
+              description: description('DataBinding'),
+            },
             FunctionCommon: {
               ts: "{\n  call?: string;\n  '@call'?: string;\n  catalogId?: string;\n}",
               description: description('FunctionCommon'),
@@ -506,8 +523,16 @@ export function generateSupersetTypes() {
               description: description('ChildList'),
             },
           }),
-          {name: 'DataBindingType', ts: 'DataBinding', description: 'Alias of {@link DataBinding}.'},
-          {name: 'FunctionCallType', ts: 'FunctionCall', description: 'Alias of {@link FunctionCall}.'},
+          {
+            name: 'DataBindingType',
+            ts: 'DataBinding',
+            description: 'Alias of {@link DataBinding}.',
+          },
+          {
+            name: 'FunctionCallType',
+            ts: 'FunctionCall',
+            description: 'Alias of {@link FunctionCall}.',
+          },
         ],
       },
       {

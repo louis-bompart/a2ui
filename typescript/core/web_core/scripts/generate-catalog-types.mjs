@@ -203,10 +203,17 @@ export class TypeWriter {
     const properties = isObject(schema.properties) ? schema.properties : {};
     const required = new Set(Array.isArray(schema.required) ? schema.required : []);
     if (Object.keys(properties).length === 0) {
-      return isObject(extra) ? `Record<string, ${this.type(extra, doc, seen)}>` : 'Record<string, any>';
+      return isObject(extra)
+        ? `Record<string, ${this.type(extra, doc, seen)}>`
+        : 'Record<string, any>';
     }
     return this.members(
-      Object.entries(properties).map(([key, value]) => ({key, value, doc, required: required.has(key)})),
+      Object.entries(properties).map(([key, value]) => ({
+        key,
+        value,
+        doc,
+        required: required.has(key),
+      })),
       seen,
       extra === true || isObject(extra),
     );
