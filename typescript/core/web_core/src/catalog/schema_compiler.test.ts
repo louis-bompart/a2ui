@@ -20,7 +20,8 @@ import {afterEach, describe, it} from 'node:test';
 import {A2uiValidationError} from '../errors.js';
 import {VersionAdapterFactory} from '../processing/adapters/factory.js';
 import {MessageProcessor} from '../processing/message-processor.js';
-import type {A2uiSchema, StandardJSONSchemaV1} from './a2ui_schema.js';
+import {a2uiJsonSchemaOf, zod3ToJsonSchema} from './a2ui_json_schema.js';
+import {zodSchemaOf, type A2uiSchema, type StandardJSONSchemaV1} from './a2ui_schema.js';
 import {
   setDefaultCatalogSchemaCompiler,
   type CatalogSchemaCompiler,
@@ -28,6 +29,7 @@ import {
 } from './schema_compiler.js';
 import type {JsonSchemaObject} from './spec_annotations.js';
 import {Catalog} from './types.js';
+import {zod3CatalogSchemaCompiler} from './zod3_catalog_compiler.js';
 
 /**
  * A schema that checks only the `required` keywords of an object schema, and
@@ -168,5 +170,79 @@ describe('VersionAdapterFactory protocol schemas', () => {
   it('skips validating a version whose schema is null', () => {
     const factory = new VersionAdapterFactory({'0.9': null});
     assert.doesNotThrow(() => factory.getAdapter('v0.9').extractOperations(malformed));
+  });
+});
+
+describe('MessageProcessor schema options', () => {
+  const rejectAll: A2uiSchema = {
+    '~standard': {
+      version: 1,
+      vendor: 'test',
+      validate: () => ({issues: [{message: 'Rejected'}]}),
+    },
+  };
+  const catalog = Catalog.fromJson(DOCUMENT, '0.9', undefined, {
+    schemaCompiler: recordingCompiler(),
+  });
+  const createSurface = {version: 'v0.9', createSurface: {surfaceId: 's1', catalogId: catalog.id}};
+  const badge = (extra: Record<string, unknown>) => ({
+    version: 'v0.9',
+    updateComponents: {
+      surfaceId: 's1',
+      components: [{id: 'root', component: 'Badge', label: 'New', ...extra} as never],
+    },
+  });
+
+  it('validates messages with the protocol schemas it is given', () => {
+    const proc = new MessageProcessor([catalog as never], undefined, {
+      protocolSchemas: {'0.9': rejectAll},
+    });
+    assert.throws(
+      () => proc.processMessages([createSurface as never]),
+      (e: unknown) => e instanceof A2uiValidationError && /Rejected/.test(e.message),
+    );
+  });
+
+  it('rejects protocol schemas given with an adapter registry', () => {
+    assert.throws(
+      () =>
+        new MessageProcessor([catalog as never], undefined, {
+          adapterRegistry: new VersionAdapterFactory(),
+          protocolSchemas: {'0.9': null},
+        }),
+      /not both/,
+    );
+  });
+
+  it('validates the envelope with the envelope schemas it is given', () => {
+    const proc = new MessageProcessor([catalog as never], undefined, {
+      envelopeSchemas: {accessibility: rejectAll},
+    });
+    proc.processMessages([createSurface as never]);
+    assert.throws(
+      () => proc.processMessages([badge({accessibility: {label: 'Badge'}}) as never]),
+      (e: unknown) => e instanceof A2uiValidationError && /Rejected/.test(e.message),
+    );
+  });
+
+  it('skips validating the envelope when its schemas are null', () => {
+    const proc = new MessageProcessor([catalog as never], undefined, {envelopeSchemas: null});
+    proc.processMessages([createSurface as never]);
+    assert.doesNotThrow(() =>
+      proc.processMessages([badge({accessibility: 'not an object'}) as never]),
+    );
+  });
+});
+
+describe('zod3CatalogSchemaCompiler', () => {
+  it('returns schemas that describe themselves as JSON Schema', () => {
+    const catalog = Catalog.fromJson(DOCUMENT, '0.9', undefined, {
+      schemaCompiler: zod3CatalogSchemaCompiler,
+    });
+    const schema = zodSchemaOf(catalog.components.get('Badge')!.schema);
+    const converter = (schema as unknown as StandardJSONSchemaV1)['~standard'].jsonSchema;
+    assert.ok(converter, 'the compiled schema implements Standard JSON Schema');
+    assert.deepStrictEqual(converter.output({target: 'draft-2020-12'}), zod3ToJsonSchema(schema));
+    assert.deepStrictEqual(Object.keys(a2uiJsonSchemaOf(schema)['properties'] ?? {}), ['label']);
   });
 });

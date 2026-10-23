@@ -31,7 +31,7 @@
 import {z} from 'zod';
 import {zodToJsonSchema} from 'zod-to-json-schema';
 
-import {isAtLeastVersion, normalizeVersionString, toCanonicalVersion} from '../common/semver.js';
+import {isAtLeastVersion} from '../common/semver.js';
 import {zodSchemaOf, type A2uiSchema} from './a2ui_schema.js';
 import {exclusiveUnionOverride} from './exclusive_union.js';
 import {DEFAULT_COMMON_TYPES_URI, standardDefsForVersion} from './standard_defs.js';

@@ -19,7 +19,7 @@ import {
   validateA2uiSchema,
   type A2uiSchema,
 } from '../catalog/a2ui_schema.js';
-import {schemaLibraryPart} from '../catalog/schema_library.js';
+import {schemaLibraryPart, type EnvelopeSchemas} from '../catalog/schema_library.js';
 import {CatalogInterface} from '../catalog/types.js';
 import {isAtLeastVersion} from '../common/semver.js';
 import {isValidUax31Identifier} from '../common/uax31.js';
@@ -148,10 +148,15 @@ export class PayloadValidator {
    * @param catalog Catalog whose schemas define what a valid payload is.
    * @param config Validation strictness. When omitted, unknown components and
    *   functions are tolerated.
+   * @param envelopeSchemas The schemas that validate a component's
+   *   `accessibility` and `metadata` when its own schema does not declare
+   *   them. When omitted, those of the installed schema libraries are used;
+   *   `null`, or a property left out of the object, skips that field.
    */
   constructor(
     private readonly catalog: CatalogInterface<any, any>,
     private readonly config?: ValidationConfig,
+    private readonly envelopeSchemas?: EnvelopeSchemas | null,
   ) {
     this.enforceIdentifiers = isAtLeastVersion(catalog.protocolVersion, '1.0');
   }
@@ -243,7 +248,10 @@ export class PayloadValidator {
     id: string,
     componentCatalogId: string | undefined,
   ): void {
-    const envelopeSchemas = schemaLibraryPart(library => library.envelopeSchemas);
+    const envelopeSchemas =
+      this.envelopeSchemas !== undefined
+        ? this.envelopeSchemas
+        : schemaLibraryPart(library => library.envelopeSchemas);
     const validateField = (schema: A2uiSchema | undefined, value: unknown): void => {
       const result = schema ? validateA2uiSchema(schema, value) : undefined;
       if (result?.issues) {

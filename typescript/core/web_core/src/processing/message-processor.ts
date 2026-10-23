@@ -25,13 +25,14 @@ import {SurfaceComponentsModel} from '../state/surface-components-model.js';
 import {DataModel} from '../state/data-model.js';
 import {Subscription} from '../common/events.js';
 
-import {A2uiCatalogError, A2uiIntegrityError, A2uiValidationError} from '../errors.js';
+import type {EnvelopeSchemas, ProtocolSchemas} from '../catalog/schema_library.js';
+import {A2uiCatalogError, A2uiError, A2uiIntegrityError, A2uiValidationError} from '../errors.js';
 import {
   RecordedGraphBound,
   recordComponentGraphBound,
   validateComponentGraph,
 } from '../state/validation-helpers.js';
-import {defaultVersionAdapterFactory} from './adapters/factory.js';
+import {defaultVersionAdapterFactory, VersionAdapterFactory} from './adapters/factory.js';
 import {compareSemVer, isAtLeastVersion, toCanonicalVersion} from '../common/semver.js';
 import {
   InternalOperation,
@@ -135,6 +136,20 @@ export interface MessageProcessorOptions {
   version?: ProtocolVersion;
   /** Custom version adapter resolver or registry. Defaults to VersionAdapterFactory. */
   adapterRegistry?: VersionAdapterResolver;
+  /**
+   * The schemas that validate the messages of each protocol version, as
+   * `VersionAdapterFactory` takes them: a version left out is validated with
+   * the schema of the installed schema libraries, and one set to `null` is not
+   * validated. Pass either this or `adapterRegistry`, not both.
+   */
+  protocolSchemas?: ProtocolSchemas;
+  /**
+   * The schemas that validate a component's `accessibility` and `metadata`
+   * when its own schema does not declare them. When omitted, those of the
+   * installed schema libraries are used; `null`, or a property left out of
+   * the object, skips validating that field.
+   */
+  envelopeSchemas?: EnvelopeSchemas | null;
   /** Validation configuration rules. */
   validationConfig?: ValidationConfig;
   /** Listener receiving outbound renderer messages intended for the agent. Required for callAgentFunction. */
@@ -160,6 +175,7 @@ export class MessageProcessor<T extends ComponentApi = ComponentApi> {
   readonly model: SurfaceGroupModel<T>;
   readonly rpc: RpcHandler;
   private readonly adapterRegistry: VersionAdapterResolver;
+  private readonly envelopeSchemas?: EnvelopeSchemas | null;
   private readonly validationConfig?: ValidationConfig;
   private readonly catalogs: Catalog<any>[];
   /**
@@ -187,7 +203,15 @@ export class MessageProcessor<T extends ComponentApi = ComponentApi> {
   ) {
     this.catalogs = linkCatalogs(catalogs);
     this.model = new SurfaceGroupModel<T>();
-    this.adapterRegistry = options?.adapterRegistry ?? defaultVersionAdapterFactory;
+    if (options?.adapterRegistry && options.protocolSchemas) {
+      throw new A2uiError('Pass either adapterRegistry or protocolSchemas, not both.');
+    }
+    this.adapterRegistry =
+      options?.adapterRegistry ??
+      (options?.protocolSchemas
+        ? new VersionAdapterFactory(options.protocolSchemas)
+        : defaultVersionAdapterFactory);
+    this.envelopeSchemas = options?.envelopeSchemas;
     this.rpc = new RpcHandler({
       catalogs: this.catalogs,
       outboundListener: options?.outboundListener,
@@ -752,7 +776,11 @@ export class MessageProcessor<T extends ComponentApi = ComponentApi> {
     let validatedTheme = theme;
     if (theme && catalog?.themeSchema) {
       try {
-        validatedTheme = new PayloadValidator(catalog, this.validationConfig).validateTheme(theme);
+        validatedTheme = new PayloadValidator(
+          catalog,
+          this.validationConfig,
+          this.envelopeSchemas,
+        ).validateTheme(theme);
       } catch (err: unknown) {
         if (err instanceof A2uiValidationError) {
           throw new A2uiValidationError(
@@ -828,7 +856,11 @@ export class MessageProcessor<T extends ComponentApi = ComponentApi> {
 
     // A partial update names no component type; the existing model supplies it.
     const existing = surface.componentsModel.get(id);
-    new PayloadValidator(targetCatalog, this.validationConfig).validateComponent(
+    new PayloadValidator(
+      targetCatalog,
+      this.validationConfig,
+      this.envelopeSchemas,
+    ).validateComponent(
       this.componentPayloadForValidation(comp, surface, targetCatalog),
       existing?.type,
     );
@@ -974,10 +1006,11 @@ export class MessageProcessor<T extends ComponentApi = ComponentApi> {
         });
         if (!checked) {
           const rawArgs = record['args'];
-          new PayloadValidator(target, this.validationConfig).validateFunction(
-            name,
-            (rawArgs ?? {}) as Record<string, unknown>,
-          );
+          new PayloadValidator(
+            target,
+            this.validationConfig,
+            this.envelopeSchemas,
+          ).validateFunction(name, (rawArgs ?? {}) as Record<string, unknown>);
         }
       }
       Object.values(record).forEach(visit);

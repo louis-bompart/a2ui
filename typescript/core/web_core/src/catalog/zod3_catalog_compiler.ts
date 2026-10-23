@@ -22,8 +22,8 @@
 import {z} from 'zod';
 
 import {isAtLeastVersion} from '../common/semver.js';
-import {A2uiCatalogError} from '../errors.js';
 import {CommonSchemas, ComponentCommonSchema} from '../types/common-types.js';
+import {zod3ToJsonSchema} from './a2ui_json_schema.js';
 import {exclusiveUnion} from './exclusive_union.js';
 import type {CatalogSchemaCompiler} from './schema_compiler.js';
 import {
@@ -817,25 +817,42 @@ function convertFunctionArgsJsonSchemaToZod(
 }
 
 /**
- * Compiles catalog definitions into Zod 3 schemas.
+ * Makes a compiled schema implement Standard JSON Schema with its Zod 3
+ * conversion, so that web_core reads its JSON Schema view without an
+ * installed Zod 3 schema library.
+ */
+function selfDescribing<T extends z.ZodTypeAny>(schema: T): T {
+  const output = () => zod3ToJsonSchema(schema);
+  Object.assign(schema['~standard'], {jsonSchema: {input: output, output}});
+  return schema;
+}
+
+/**
+ * Compiles catalog definitions into Zod 3 schemas. The schemas it returns
+ * implement Standard JSON Schema, so a catalog compiled with it, passed as
+ * `Catalog.fromJson`'s `schemaCompiler`, needs no installed schema library.
  */
 export const zod3CatalogSchemaCompiler: CatalogSchemaCompiler = {
   component: (definition, {document, peers, protocolVersion}) =>
-    convertComponentJsonSchemaToZod(
-      definition as Record<string, unknown>,
-      document as Record<string, unknown>,
-      true,
-      new ConversionCache(peers),
-      isAtLeastVersion(protocolVersion, '1.0'),
+    selfDescribing(
+      convertComponentJsonSchemaToZod(
+        definition as Record<string, unknown>,
+        document as Record<string, unknown>,
+        true,
+        new ConversionCache(peers),
+        isAtLeastVersion(protocolVersion, '1.0'),
+      ),
     ),
   functionArgs: (argsSchema, {document, peers}) =>
-    argsSchema
-      ? convertFunctionArgsJsonSchemaToZod(
-          argsSchema as Record<string, unknown>,
-          document as Record<string, unknown>,
-          new ConversionCache(peers),
-        )
-      : z.record(z.unknown()),
+    selfDescribing(
+      argsSchema
+        ? convertFunctionArgsJsonSchemaToZod(
+            argsSchema as Record<string, unknown>,
+            document as Record<string, unknown>,
+            new ConversionCache(peers),
+          )
+        : z.record(z.unknown()),
+    ),
   theme: (themeSchema, {document}) => {
     const themeZod = convertComponentJsonSchemaToZod(
       themeSchema as Record<string, unknown>,
@@ -847,6 +864,6 @@ export const zod3CatalogSchemaCompiler: CatalogSchemaCompiler = {
     const closed =
       themeSchema['additionalProperties'] === false ||
       themeSchema['unevaluatedProperties'] === false;
-    return closed ? themeZod : themeZod.passthrough();
+    return selfDescribing(closed ? themeZod : themeZod.passthrough());
   },
 };
