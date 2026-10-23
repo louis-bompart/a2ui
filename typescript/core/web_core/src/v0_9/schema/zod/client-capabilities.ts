@@ -18,8 +18,6 @@
 // Generated from specification/v0.9/json/ via src/v0_9/scripts/generate-schemas.mjs
 import {z} from 'zod';
 
-type JsonSchema = Record<string, unknown>;
-
 export const FunctionDefinitionSchema = z
   .object({
     'name': z.string().describe('The unique name of the function.'),
@@ -34,7 +32,6 @@ export const FunctionDefinitionSchema = z
   })
   .strict()
   .describe("Describes a function's interface.");
-type FunctionDefinition = z.infer<typeof FunctionDefinitionSchema>;
 
 export const InlineCatalogSchema = z
   .object({
@@ -56,7 +53,6 @@ export const InlineCatalogSchema = z
   })
   .strict()
   .describe('A collection of component and function definitions.');
-type InlineCatalog = z.infer<typeof InlineCatalogSchema>;
 
 export const A2uiVersionCapabilitiesSchema = z
   .object({
@@ -73,4 +69,3 @@ export const A2uiVersionCapabilitiesSchema = z
       .optional(),
   })
   .describe('The capabilities structure for version 0.9 of the A2UI protocol.');
-type A2uiVersionCapabilities = z.infer<typeof A2uiVersionCapabilitiesSchema>;

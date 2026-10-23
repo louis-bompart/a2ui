@@ -295,7 +295,23 @@ export function writeIndexFile(destDir, version, generatorSource) {
  * @returns {string} The code, without exported types.
  */
 export function privatizeTypes(code) {
-  return code.replace(/^export (type|interface) /gm, '$1 ');
+  let result = code.replace(/^export (type|interface) /gm, '$1 ');
+  // Drops the private types nothing refers to, until every one left is used.
+  for (;;) {
+    const declarations = result.matchAll(
+      /^(?:\/\*\*(?:(?!\*\/)[\s\S])*\*\/\n)?(?:type (\w+)\b[^\n]*=[^\n]*\n|interface (\w+)\b[^{\n]*\{[\s\S]*?\n\}\n)/gm,
+    );
+    // The code without its comments, strings and object keys.
+    const code = result.replace(
+      /\/\*[\s\S]*?\*\/|\/\/[^\n]*|'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|\b\w+(?=\s*:)/g,
+      "''",
+    );
+    const unused = [...declarations].find(
+      m => code.match(new RegExp(`\\b${m[1] ?? m[2]}\\b`, 'g')).length === 1,
+    );
+    if (!unused) return result;
+    result = result.slice(0, unused.index) + result.slice(unused.index + unused[0].length);
+  }
 }
 
 /**

@@ -38,7 +38,6 @@ export const StringValueSchema = z
   })
   .strict()
   .superRefine(exactlyOneKey);
-type StringValue = z.infer<typeof StringValueSchema>;
 
 const DataValueMapItemSchema: z.ZodType<any> = z.lazy(() =>
   z
@@ -96,7 +95,6 @@ export const NumberValueSchema = z
   })
   .strict()
   .superRefine(exactlyOneKey);
-type NumberValue = z.infer<typeof NumberValueSchema>;
 
 export const BooleanValueSchema = z
   .object({
@@ -106,7 +104,6 @@ export const BooleanValueSchema = z
   })
   .strict()
   .superRefine(exactlyOneKey);
-type BooleanValue = z.infer<typeof BooleanValueSchema>;
 
 /**
  * Action Schema for components that trigger user actions

@@ -225,5 +225,3 @@ export const A2uiMessageSchema = z
   .describe(
     "Describes a JSON payload for an A2UI (Agent to UI) message, which is used to dynamically construct and update user interfaces. A message MUST contain exactly ONE of the action properties: 'beginRendering', 'surfaceUpdate', 'dataModelUpdate', or 'deleteSurface'.",
   );
-
-type A2uiMessage = z.infer<typeof A2uiMessageSchema>;

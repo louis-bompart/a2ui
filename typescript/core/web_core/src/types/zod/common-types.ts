@@ -41,8 +41,6 @@ export const ComponentIdSchema = markChildRef(
     ),
   'component-id',
 );
-/** REF:common_types.json#/$defs/ComponentId|The unique identifier for a component, used for both definitions and references within the same surface. */
-type ComponentId = z.infer<typeof ComponentIdSchema>;
 
 export const DataBindingSchema = z
   .object({
@@ -53,10 +51,6 @@ export const DataBindingSchema = z
     message: "Either '@path' or 'path' must be provided.",
   })
   .describe('REF:common_types.json#/$defs/DataBinding');
-/** REF:common_types.json#/$defs/DataBinding */
-type DataBinding = z.infer<typeof DataBindingSchema>;
-
-type DataBindingType = DataBinding;
 
 export const FunctionCallSchema = z
   .object({
@@ -82,24 +76,16 @@ export const FunctionCallSchema = z
   .describe(
     'REF:common_types.json#/$defs/FunctionCall|Invokes a named function, combining common function properties with the catalog function definition.',
   );
-/** REF:common_types.json#/$defs/FunctionCall|Invokes a named function, combining common function properties with the catalog function definition. */
-type FunctionCall = z.infer<typeof FunctionCallSchema>;
-
-type FunctionCallType = FunctionCall;
 
 export const DynamicStringSchema = z
   .union([z.string(), DataBindingSchema, FunctionCallSchema])
   .describe('REF:common_types.json#/$defs/DynamicString|Represents a string');
-/** REF:common_types.json#/$defs/DynamicString|Represents a string */
-type DynamicString = z.infer<typeof DynamicStringSchema>;
 
 export const DynamicBooleanSchema = z
   .union([z.boolean(), DataBindingSchema, FunctionCallSchema])
   .describe(
     "REF:common_types.json#/$defs/DynamicBoolean|A boolean value that can be a literal, a path, or a function call returning a boolean or a validation result object (coerced to its \\'valid\\' boolean).",
   );
-/** REF:common_types.json#/$defs/DynamicBoolean|A boolean value that can be a literal, a path, or a function call returning a boolean or a validation result object (coerced to its \'valid\' boolean). */
-type DynamicBoolean = z.infer<typeof DynamicBooleanSchema>;
 
 export const AccessibilityAttributesSchema = z
   .object({
@@ -117,8 +103,6 @@ export const AccessibilityAttributesSchema = z
   .describe(
     'REF:common_types.json#/$defs/AccessibilityAttributes|Attributes to enhance accessibility when using assistive technologies like screen readers or model understanding.',
   );
-/** REF:common_types.json#/$defs/AccessibilityAttributes|Attributes to enhance accessibility when using assistive technologies like screen readers or model understanding. */
-type AccessibilityAttributes = z.infer<typeof AccessibilityAttributesSchema>;
 
 export const ExtensionsSchema = z
   .record(z.string(), z.unknown())
@@ -136,8 +120,6 @@ export const ExtensionsSchema = z
   .describe(
     "REF:#/$defs/Extensions|Optional extension metadata. Keys MUST be Unicode identifiers (UAX #31). Keys starting with 'a2ui_' are reserved for official extensions.",
   );
-/** REF:common_types.json#/$defs/Extensions|Optional extension metadata. Keys MUST be Unicode identifiers (UAX #31). Keys starting with \'a2ui_\' are reserved for official extensions. */
-type Extensions = z.infer<typeof ExtensionsSchema>;
 
 export const ComponentCommonSchema = z
   .object({
@@ -158,8 +140,6 @@ export const ComponentCommonSchema = z
       .optional(),
   })
   .describe('REF:common_types.json#/$defs/ComponentCommon');
-/** REF:common_types.json#/$defs/ComponentCommon */
-type ComponentCommon = z.infer<typeof ComponentCommonSchema>;
 
 export const ChildListSchema = markChildRef(
   z
@@ -177,8 +157,6 @@ export const ChildListSchema = markChildRef(
     .describe('REF:common_types.json#/$defs/ChildList'),
   'child-list',
 );
-/** REF:common_types.json#/$defs/ChildList */
-type ChildList = z.infer<typeof ChildListSchema>;
 
 export const DynamicValueSchema = z
   .union([
@@ -198,24 +176,18 @@ export const DynamicValueSchema = z
   .describe(
     'REF:common_types.json#/$defs/DynamicValue|A value that can be a literal, a path, or a function call returning any type.',
   );
-/** REF:common_types.json#/$defs/DynamicValue|A value that can be a literal, a path, or a function call returning any type. */
-type DynamicValue = z.infer<typeof DynamicValueSchema>;
 
 export const DynamicNumberSchema = z
   .union([z.number(), DataBindingSchema, FunctionCallSchema])
   .describe(
     'REF:common_types.json#/$defs/DynamicNumber|Represents a value that can be either a literal number, a path to a number in the data model, or a function call returning a number.',
   );
-/** REF:common_types.json#/$defs/DynamicNumber|Represents a value that can be either a literal number, a path to a number in the data model, or a function call returning a number. */
-type DynamicNumber = z.infer<typeof DynamicNumberSchema>;
 
 export const DynamicStringListSchema = z
   .union([z.array(z.string()), DataBindingSchema, FunctionCallSchema])
   .describe(
     'REF:common_types.json#/$defs/DynamicStringList|Represents a value that can be either a literal array of strings, a path to a string array in the data model, or a function call returning a string array.',
   );
-/** REF:common_types.json#/$defs/DynamicStringList|Represents a value that can be either a literal array of strings, a path to a string array in the data model, or a function call returning a string array. */
-type DynamicStringList = z.infer<typeof DynamicStringListSchema>;
 
 export const CheckRuleSchema = z
   .object({
@@ -229,8 +201,6 @@ export const CheckRuleSchema = z
   .describe(
     'REF:common_types.json#/$defs/CheckRule|A single validation check rule applied to an input component. The condition function or path evaluates to a structured validation result object or a boolean (which is coerced to a validation result object).',
   );
-/** REF:common_types.json#/$defs/CheckRule|A single validation check rule applied to an input component. The condition function or path evaluates to a structured validation result object or a boolean (which is coerced to a validation result object). */
-type CheckRule = z.infer<typeof CheckRuleSchema>;
 
 export const CheckableSchema = z
   .object({
@@ -242,8 +212,6 @@ export const CheckableSchema = z
   .describe(
     'REF:common_types.json#/$defs/Checkable|Properties for components that support renderer-side checks.',
   );
-/** REF:common_types.json#/$defs/Checkable|Properties for components that support renderer-side checks. */
-type Checkable = z.infer<typeof CheckableSchema>;
 
 export const ActionSchema = z
   .union([
@@ -298,18 +266,12 @@ export const ActionSchema = z
   .describe(
     'REF:common_types.json#/$defs/Action|Defines an interaction handler that can either trigger an agent-side event or execute a local renderer-side function.',
   );
-/** REF:common_types.json#/$defs/Action|Defines an interaction handler that can either trigger an agent-side event or execute a local renderer-side function. */
-type Action = z.infer<typeof ActionSchema>;
 
 export const CallIdSchema = z
   .string()
   .describe('REF:common_types.json#/$defs/CallId|The unique identifier for a function call.');
-/** REF:common_types.json#/$defs/CallId|The unique identifier for a function call. */
-type CallId = z.infer<typeof CallIdSchema>;
 
 export const ChildSchema = ComponentIdSchema;
-/** REF:common_types.json#/$defs/Child|A reference to a single child component ID. */
-type Child = z.infer<typeof ChildSchema>;
 
 export const FunctionCommonSchema = z
   .object({
@@ -326,8 +288,6 @@ export const FunctionCommonSchema = z
   .describe(
     "REF:common_types.json#/$defs/FunctionCommon|Baseline envelope properties common to all function calls. Function-specific argument schemas ('args') are defined individually by each function in the active catalog.",
   );
-/** REF:common_types.json#/$defs/FunctionCommon|Baseline envelope properties common to all function calls. Function-specific argument schemas (\'args\') are defined individually by each function in the active catalog. */
-type FunctionCommon = z.infer<typeof FunctionCommonSchema>;
 
 export const IndexSystemFunctionSchema = z
   .object({
@@ -345,8 +305,6 @@ export const IndexSystemFunctionSchema = z
   .describe(
     'REF:common_types.json#/$defs/IndexSystemFunction|Returns the 0-based index of the current item when rendering a dynamic list from a template. This function MUST ONLY be available when evaluating template items within a list context.',
   );
-/** REF:common_types.json#/$defs/IndexSystemFunction|Returns the 0-based index of the current item when rendering a dynamic list from a template. This function MUST ONLY be available when evaluating template items within a list context. */
-type IndexSystemFunction = z.infer<typeof IndexSystemFunctionSchema>;
 
 export const SurfaceSchema = z
   .object({
@@ -357,8 +315,6 @@ export const SurfaceSchema = z
   .describe(
     "REF:common_types.json#/$defs/Surface|The reserved canonical container component representing an A2UI surface. The Surface component is immutable and always has \\'child\\': \\'root\\'.",
   );
-/** REF:common_types.json#/$defs/Surface|The reserved canonical container component representing an A2UI surface. The Surface component is immutable and always has \'child\': \'root\'. */
-type Surface = z.infer<typeof SurfaceSchema>;
 
 export const FunctionResponseSchema = z
   .object({
@@ -377,8 +333,6 @@ export const FunctionResponseSchema = z
   .describe(
     'REF:common_types.json#/$defs/FunctionResponse|The return response matching a callAgentFunction or callRendererFunction invocation.',
   );
-/** REF:common_types.json#/$defs/FunctionResponse|The return response matching a callAgentFunction or callRendererFunction invocation. */
-type FunctionResponse = z.infer<typeof FunctionResponseSchema>;
 
 /**
  * Registry of reusable common schema definitions across A2UI catalogs and protocols.

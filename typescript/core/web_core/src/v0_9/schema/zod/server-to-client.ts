@@ -45,7 +45,6 @@ export const CreateSurfaceMessageSchema = z
       ),
   })
   .strict();
-type CreateSurfaceMessage = z.infer<typeof CreateSurfaceMessageSchema>;
 
 export const UpdateComponentsMessageSchema = z
   .object({
@@ -64,7 +63,6 @@ export const UpdateComponentsMessageSchema = z
       ),
   })
   .strict();
-type UpdateComponentsMessage = z.infer<typeof UpdateComponentsMessageSchema>;
 
 export const UpdateDataModelMessageSchema = z
   .object({
@@ -93,7 +91,6 @@ export const UpdateDataModelMessageSchema = z
       ),
   })
   .strict();
-type UpdateDataModelMessage = z.infer<typeof UpdateDataModelMessageSchema>;
 
 export const DeleteSurfaceMessageSchema = z
   .object({
@@ -108,7 +105,6 @@ export const DeleteSurfaceMessageSchema = z
       ),
   })
   .strict();
-type DeleteSurfaceMessage = z.infer<typeof DeleteSurfaceMessageSchema>;
 
 export const A2uiMessageSchema = z.union([
   CreateSurfaceMessageSchema,
@@ -116,10 +112,8 @@ export const A2uiMessageSchema = z.union([
   UpdateDataModelMessageSchema,
   DeleteSurfaceMessageSchema,
 ]);
-type A2uiMessage = z.infer<typeof A2uiMessageSchema>;
 
 export const A2uiMessageListSchema = z.array(A2uiMessageSchema).describe('A list of messages.');
-type A2uiMessageList = z.infer<typeof A2uiMessageListSchema>;
 
 export const A2uiMessageListWrapperSchema = z
   .object({
@@ -127,4 +121,3 @@ export const A2uiMessageListWrapperSchema = z
   })
   .strict()
   .describe('An object wrapping a list of messages.');
-type A2uiMessageListWrapper = z.infer<typeof A2uiMessageListWrapperSchema>;

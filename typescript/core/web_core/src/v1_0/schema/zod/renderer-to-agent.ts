@@ -66,7 +66,6 @@ export const ActionMessageSchema = z
       .describe('Reports a user-initiated action from a component.'),
   })
   .strict();
-type ActionMessage = z.infer<typeof ActionMessageSchema>;
 
 export const CallAgentFunctionMessageSchema = z
   .object({
@@ -81,12 +80,10 @@ export const CallAgentFunctionMessageSchema = z
       .describe('Signals the agent to execute a function remotely on behalf of the renderer.'),
   })
   .strict();
-type CallAgentFunctionMessage = z.infer<typeof CallAgentFunctionMessageSchema>;
 
 export const RendererFunctionResponseMessageSchema = z
   .object({'version': z.literal('v1.0'), 'rendererFunctionResponse': FunctionResponseSchema})
   .strict();
-type RendererFunctionResponseMessage = z.infer<typeof RendererFunctionResponseMessageSchema>;
 
 export const ErrorMessageSchema = z
   .object({
@@ -154,7 +151,6 @@ export const ErrorMessageSchema = z
       .describe('Reports a renderer-side error.'),
   })
   .strict();
-type ErrorMessage = z.infer<typeof ErrorMessageSchema>;
 
 /** Union schema validating any outgoing v1.0 renderer-to-agent message envelope. */
 export const RendererToAgentMessageSchema = z.union([
@@ -163,4 +159,3 @@ export const RendererToAgentMessageSchema = z.union([
   RendererFunctionResponseMessageSchema,
   ErrorMessageSchema,
 ]);
-type RendererToAgentMessage = z.infer<typeof RendererToAgentMessageSchema>;

@@ -41,7 +41,6 @@ export const TemplateChildListSchema = z
       .describe('The path to the list of component property objects in the data model.'),
   })
   .describe('REF:#/$defs/TemplateChildList');
-type TemplateChildList = z.infer<typeof TemplateChildListSchema>;
 
 export function componentId(options: RefSchemaOptions = {}): typeof ComponentIdSchema {
   if (options.description === undefined) {
@@ -95,14 +94,3 @@ export const AnyComponentSchema = z
   })
   .passthrough()
   .describe('A generic A2UI component definition.');
-type AnyComponent = z.infer<typeof AnyComponentSchema>;
-
-type A2uiClientCapabilities =
-  | {
-      'v0.9': any;
-      'v0.9.1'?: any;
-    }
-  | {
-      'v0.9'?: any;
-      'v0.9.1': any;
-    };

@@ -34,4 +34,3 @@ export const V10RendererCapabilitiesSchema = z
       .optional(),
   })
   .describe('The capabilities structure for version 1.0 of the A2UI protocol.');
-type V10RendererCapabilities = z.infer<typeof V10RendererCapabilitiesSchema>;

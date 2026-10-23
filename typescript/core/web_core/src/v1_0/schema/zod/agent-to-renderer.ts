@@ -64,7 +64,6 @@ export const CreateSurfaceMessageSchema = z
       ),
   })
   .strict();
-type CreateSurfaceMessage = z.infer<typeof CreateSurfaceMessageSchema>;
 
 export const UpdateComponentsMessageSchema = z
   .object({
@@ -84,7 +83,6 @@ export const UpdateComponentsMessageSchema = z
       ),
   })
   .strict();
-type UpdateComponentsMessage = z.infer<typeof UpdateComponentsMessageSchema>;
 
 export const UpdateDataModelMessageSchema = z
   .object({
@@ -114,7 +112,6 @@ export const UpdateDataModelMessageSchema = z
       ),
   })
   .strict();
-type UpdateDataModelMessage = z.infer<typeof UpdateDataModelMessageSchema>;
 
 export const DeleteSurfaceMessageSchema = z
   .object({
@@ -133,7 +130,6 @@ export const DeleteSurfaceMessageSchema = z
       ),
   })
   .strict();
-type DeleteSurfaceMessage = z.infer<typeof DeleteSurfaceMessageSchema>;
 
 export const CallRendererFunctionMessageSchema = z
   .object({
@@ -156,12 +152,10 @@ export const CallRendererFunctionMessageSchema = z
       .describe('Signals the renderer to execute a function locally on behalf of the agent.'),
   })
   .strict();
-type CallRendererFunctionMessage = z.infer<typeof CallRendererFunctionMessageSchema>;
 
 export const AgentFunctionResponseMessageSchema = z
   .object({'version': z.literal('v1.0'), 'agentFunctionResponse': FunctionResponseSchema})
   .strict();
-type AgentFunctionResponseMessage = z.infer<typeof AgentFunctionResponseMessageSchema>;
 
 export const AgentToRendererMessageSchema = z.union([
   CreateSurfaceMessageSchema,
@@ -171,4 +165,3 @@ export const AgentToRendererMessageSchema = z.union([
   CallRendererFunctionMessageSchema,
   AgentFunctionResponseMessageSchema,
 ]);
-type AgentToRendererMessage = z.infer<typeof AgentToRendererMessageSchema>;

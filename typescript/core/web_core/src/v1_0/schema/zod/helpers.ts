@@ -45,7 +45,6 @@ export const TemplateChildListSchema = z
   .describe(
     'REF:#/$defs/TemplateChildList|A template for generating a dynamic list of children from a data model list. The `componentId` is the component to use as a template.',
   );
-type TemplateChildList = z.infer<typeof TemplateChildListSchema>;
 
 export function componentId(options: RefSchemaOptions = {}): typeof ComponentIdSchema {
   if (options.description === undefined) {
@@ -102,12 +101,9 @@ export const AnyComponentSchema: z.ZodType<any> = z.lazy(() =>
         'Component type cannot be "Surface". "Surface" is a top-level protocol container defined in createSurface, not a child component.',
     }),
 );
-type AnyComponent = z.infer<typeof AnyComponentSchema>;
 
 /** Zod schema validating a non-empty array of UI component payloads. */
 export const ComponentsListSchema = z.array(AnyComponentSchema).min(1);
-type ComponentsList = z.infer<typeof ComponentsListSchema>;
 
 /** Zod schema validating multi-version renderer capabilities maps across protocol versions. */
 export const RendererCapabilitiesSchema = z.record(z.string(), z.any());
-type RendererCapabilities = z.infer<typeof RendererCapabilitiesSchema>;

@@ -66,6 +66,3 @@ export const AnyComponentSchema = z
   })
   .passthrough()
   .describe('A generic A2UI component definition.');
-
-/** Generic component definition payload. */
-type AnyComponent = z.infer<typeof AnyComponentSchema>;

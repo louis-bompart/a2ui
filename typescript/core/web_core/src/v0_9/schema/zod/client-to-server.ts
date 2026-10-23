@@ -36,7 +36,6 @@ export const A2uiClientActionSchema = z
       ),
   })
   .describe('Reports a user-initiated action from a component.');
-type A2uiClientAction = z.infer<typeof A2uiClientActionSchema>;
 
 export const A2uiValidationErrorSchema = z
   .object({
@@ -69,7 +68,6 @@ export const A2uiGenericErrorSchema = z
   .catchall(z.any());
 
 export const A2uiClientErrorSchema = z.union([A2uiValidationErrorSchema, A2uiGenericErrorSchema]);
-type A2uiClientError = z.infer<typeof A2uiClientErrorSchema>;
 
 export const A2uiClientMessageSchema = z
   .object({
@@ -78,7 +76,6 @@ export const A2uiClientMessageSchema = z
   .and(
     z.union([z.object({action: A2uiClientActionSchema}), z.object({error: A2uiClientErrorSchema})]),
   );
-type A2uiClientMessage = z.infer<typeof A2uiClientMessageSchema>;
 
 export const A2uiClientDataModelSchema = z
   .object({
@@ -96,12 +93,10 @@ export const A2uiClientDataModelSchema = z
   .describe(
     'Schema for attaching the client data model to A2A message metadata. This object should be placed in the `a2uiClientDataModel` field of the metadata.',
   );
-type A2uiClientDataModel = z.infer<typeof A2uiClientDataModelSchema>;
 
 export const A2uiClientMessageListSchema = z
   .array(A2uiClientMessageSchema)
   .describe('A list of client messages.');
-type A2uiClientMessageList = z.infer<typeof A2uiClientMessageListSchema>;
 
 export const A2uiClientMessageListWrapperSchema = z
   .object({
@@ -109,4 +104,3 @@ export const A2uiClientMessageListWrapperSchema = z
   })
   .strict()
   .describe('An object wrapping a list of client messages.');
-type A2uiClientMessageListWrapper = z.infer<typeof A2uiClientMessageListWrapperSchema>;

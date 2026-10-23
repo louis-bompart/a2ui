@@ -32,9 +32,6 @@ export const FunctionCallValidationSchemaSchema = z
     'required': z.array(z.string()),
   })
   .describe('JSON Schema structure that validates a wire-level FunctionCall object.');
-type FunctionCallValidationSchema = z.infer<typeof FunctionCallValidationSchemaSchema>;
-
-type FunctionCallValidationSchemaInput = z.input<typeof FunctionCallValidationSchemaSchema>;
 
 export const FunctionDefinitionSchema = z
   .record(z.string(), z.any())
@@ -80,9 +77,6 @@ export const FunctionDefinitionSchema = z
     }
   })
   .describe("Describes a function's validation schema and interface metadata.");
-type FunctionDefinition = z.infer<typeof FunctionDefinitionSchema>;
-
-type FunctionDefinitionInput = z.input<typeof FunctionDefinitionSchema>;
 
 export const ComponentDefinitionSchema = z
   .record(z.string(), z.any())
@@ -119,9 +113,6 @@ export const ComponentDefinitionSchema = z
     ),
   )
   .describe("Describes a component's validation schema and composition constraints.");
-type ComponentDefinition = z.infer<typeof ComponentDefinitionSchema>;
-
-type ComponentDefinitionInput = z.input<typeof ComponentDefinitionSchema>;
 
 export const ValidationResultSchema = z
   .object({
@@ -139,6 +130,3 @@ export const ValidationResultSchema = z
   .describe(
     'Dynamic validation result object returned by a validation condition function or data binding.',
   );
-type ValidationResult = z.infer<typeof ValidationResultSchema>;
-
-type ValidationResultInput = z.input<typeof ValidationResultSchema>;

@@ -28,13 +28,11 @@ export const ComponentIdSchema = markChildRef(
     ),
   'component-id',
 );
-type ComponentId = z.infer<typeof ComponentIdSchema>;
 
 export const DataBindingSchema = z
   .object({'path': z.string().describe('A JSON Pointer path to a value in the data model.')})
   .strict()
   .describe('REF:#/$defs/DataBinding');
-type DataBinding = z.infer<typeof DataBindingSchema>;
 
 export const DynamicValueSchema: z.ZodType<DynamicValue> = z
   .union([
@@ -72,19 +70,16 @@ export const FunctionCallSchema: z.ZodType<FunctionCall> = z
 export const DynamicStringSchema = z
   .union([z.string(), DataBindingSchema, FunctionCallSchema])
   .describe('REF:#/$defs/DynamicString|Represents a string');
-type DynamicString = z.infer<typeof DynamicStringSchema>;
 
 export const AccessibilityAttributesSchema = z
   .object({'label': DynamicStringSchema.optional(), 'description': DynamicStringSchema.optional()})
   .describe(
     'REF:#/$defs/AccessibilityAttributes|Attributes to enhance accessibility when using assistive technologies like screen readers.',
   );
-type AccessibilityAttributes = z.infer<typeof AccessibilityAttributesSchema>;
 
 export const ComponentCommonSchema = z
   .object({'id': ComponentIdSchema, 'accessibility': AccessibilityAttributesSchema.optional()})
   .describe('REF:#/$defs/ComponentCommon');
-type ComponentCommon = z.infer<typeof ComponentCommonSchema>;
 
 export const ChildListSchema = markChildRef(
   z
@@ -105,28 +100,24 @@ export const ChildListSchema = markChildRef(
     .describe('REF:#/$defs/ChildList'),
   'child-list',
 );
-type ChildList = z.infer<typeof ChildListSchema>;
 
 export const DynamicNumberSchema = z
   .union([z.number(), DataBindingSchema, FunctionCallSchema])
   .describe(
     'REF:#/$defs/DynamicNumber|Represents a value that can be either a literal number, a path to a number in the data model, or a function call returning a number.',
   );
-type DynamicNumber = z.infer<typeof DynamicNumberSchema>;
 
 export const DynamicBooleanSchema = z
   .union([z.boolean(), DataBindingSchema, FunctionCallSchema])
   .describe(
     'REF:#/$defs/DynamicBoolean|A boolean value that can be a literal, a path, or a function call returning a boolean.',
   );
-type DynamicBoolean = z.infer<typeof DynamicBooleanSchema>;
 
 export const DynamicStringListSchema = z
   .union([z.array(z.string()), DataBindingSchema, FunctionCallSchema])
   .describe(
     'REF:#/$defs/DynamicStringList|Represents a value that can be either a literal array of strings, a path to a string array in the data model, or a function call returning a string array.',
   );
-type DynamicStringList = z.infer<typeof DynamicStringListSchema>;
 
 export const CheckRuleSchema = z
   .object({
@@ -135,7 +126,6 @@ export const CheckRuleSchema = z
   })
   .strict()
   .describe('REF:#/$defs/CheckRule|A single validation rule applied to an input component.');
-type CheckRule = z.infer<typeof CheckRuleSchema>;
 
 export const CheckableSchema = z
   .object({
@@ -147,7 +137,6 @@ export const CheckableSchema = z
       .optional(),
   })
   .describe('REF:#/$defs/Checkable|Properties for components that support client-side checks.');
-type Checkable = z.infer<typeof CheckableSchema>;
 
 export const ActionSchema = z
   .union([
@@ -176,7 +165,6 @@ export const ActionSchema = z
   .describe(
     'REF:#/$defs/Action|Defines an interaction handler that can either trigger a server-side event or execute a local client-side function.',
   );
-type Action = z.infer<typeof ActionSchema>;
 
 export const CommonSchemas = {
   ComponentId: ComponentIdSchema,
